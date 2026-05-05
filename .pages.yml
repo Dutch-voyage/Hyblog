@@ -1,0 +1,53 @@
+media:
+  input: public/images
+  output: /images
+
+content:
+  - name: posts
+    label: Posts
+    type: collection
+    path: src/content/posts
+    filename: "{fields.slug}.md"
+    fields:
+      - { name: title, label: Title, type: string, required: true }
+      - { name: slug, label: Slug, type: string, required: true }
+      - { name: description, label: Description, type: text, required: true }
+      - { name: pubDate, label: Publish Date, type: date, required: true }
+      - { name: updatedDate, label: Updated Date, type: date, required: false }
+      - { name: authors, label: Authors, type: string, list: true, required: false }
+      - { name: tags, label: Tags, type: string, list: true, required: false }
+      - { name: status, label: Status, type: select, options: ["draft", "published"], required: true }
+      - { name: formats, label: Formats, type: string, list: true, required: false }
+      - { name: body, label: Body, type: rich-text, required: true }
+  - name: notes
+    label: Notes
+    type: collection
+    path: src/content/notes
+    filename: "{fields.slug}.md"
+    fields:
+      - { name: title, label: Title, type: string, required: true }
+      - { name: slug, label: Slug, type: string, required: true }
+      - { name: description, label: Description, type: text, required: true }
+      - { name: pubDate, label: Publish Date, type: date, required: true }
+      - { name: authors, label: Authors, type: string, list: true, required: false }
+      - { name: tags, label: Tags, type: string, list: true, required: false }
+      - { name: status, label: Status, type: select, options: ["draft", "published"], required: true }
+      - { name: formats, label: Formats, type: string, list: true, required: false }
+      - { name: body, label: Body, type: rich-text, required: true }
+  - name: demos
+    label: Demos
+    type: collection
+    path: src/content/demos
+    filename: "{fields.slug}.mdx"
+    fields:
+      - { name: title, label: Title, type: string, required: true }
+      - { name: slug, label: Slug, type: string, required: true }
+      - { name: description, label: Description, type: text, required: true }
+      - { name: pubDate, label: Publish Date, type: date, required: true }
+      - { name: authors, label: Authors, type: string, list: true, required: false }
+      - { name: tags, label: Tags, type: string, list: true, required: false }
+      - { name: status, label: Status, type: select, options: ["draft", "published"], required: true }
+      - { name: demoUrl, label: Demo URL, type: string, required: false }
+      - { name: repositoryUrl, label: Repository URL, type: string, required: false }
+      - { name: formats, label: Formats, type: string, list: true, required: false }
+      - { name: body, label: Body, type: rich-text, required: true }

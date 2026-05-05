@@ -1,0 +1,28 @@
+---
+title: "第一个 Demo 页面"
+description: "用 MDX 验证 demo 内容可以在博客中承载交互说明和结构化展示。"
+pubDate: 2026-05-06
+authors:
+  - "owner"
+tags:
+  - "demo"
+  - "mdx"
+status: "published"
+demoUrl: "https://example.com"
+formats:
+  - "demo"
+---
+
+这个页面用 `.mdx` 编写，代表后续 demo、视频脚本、工具说明和 notebook 包装页的基础形态。
+
+export const checklist = [
+  "保留 Markdown 写作体验",
+  "允许逐步嵌入组件",
+  "用 frontmatter 管理 demo 元数据",
+];
+
+## Demo 检查项
+
+{checklist.map((item) => (
+  <p><strong>完成：</strong>{item}</p>
+))}

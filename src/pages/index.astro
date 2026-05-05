@@ -1,0 +1,72 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import ContentCard from "@/components/ContentCard.astro";
+
+const collections = await Promise.all([
+  getCollection("posts", ({ data }) => data.status === "published"),
+  getCollection("notes", ({ data }) => data.status === "published"),
+  getCollection("demos", ({ data }) => data.status === "published"),
+]);
+
+const recentEntries = collections
+  .flat()
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 6);
+
+const contentPath = {
+  posts: "posts",
+  notes: "notes",
+  demos: "demos",
+} as const;
+---
+
+<BaseLayout
+  title="Hybrid Blog"
+  description="一个从个人博客出发、逐步承载多媒介内容和 agent 共创的实验性博客。"
+>
+  <section class="hero">
+    <p class="eyebrow">Personal publishing lab</p>
+    <h1>一个最小但可扩展的混合博客。</h1>
+    <p class="lede">
+      这里先从文章、短笔记和 demo 开始，保留之后扩展到 MDX 交互内容、notebook、语音和 agent 草稿工作流的空间。
+    </p>
+  </section>
+
+  <section aria-labelledby="sections-title">
+    <h2 id="sections-title">内容入口</h2>
+    <div class="grid">
+      <article class="card">
+        <h3><a href="/posts/">文章</a></h3>
+        <p>适合系统性表达、技术总结和产品思考。</p>
+      </article>
+      <article class="card">
+        <h3><a href="/notes/">笔记</a></h3>
+        <p>适合短内容、灵感记录和轻量更新。</p>
+      </article>
+      <article class="card">
+        <h3><a href="/demos/">Demo</a></h3>
+        <p>适合展示原型、视频脚本、交互组件和工具页。</p>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="recent-title">
+    <h2 id="recent-title">最近更新</h2>
+    <ul class="content-list">
+      {
+        recentEntries.map((entry) => (
+          <li>
+            <ContentCard
+              href={`/${contentPath[entry.collection]}/${entry.id}/`}
+              title={entry.data.title}
+              description={entry.data.description}
+              pubDate={entry.data.pubDate}
+              tags={entry.data.tags}
+            />
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</BaseLayout>
