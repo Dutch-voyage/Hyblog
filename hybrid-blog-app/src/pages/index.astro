@@ -1,0 +1,173 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { getEntryHref, getPublishedEntries } from "@/lib/content";
+import siteConfig from "@/lib/site";
+
+const feedEntries = await getPublishedEntries();
+---
+
+<BaseLayout
+  title={siteConfig.title}
+  description={siteConfig.description}
+>
+  <section class="hero">
+    <p class="eyebrow">{siteConfig.homeEyebrow}</p>
+    <h1>{siteConfig.homeHeadline}</h1>
+    <p class="lede">{siteConfig.homeIntro}</p>
+  </section>
+
+  <section aria-labelledby="feed-title" class="home-feed">
+    <div class="feed-heading">
+      <div>
+        <p class="eyebrow">Waterfall</p>
+        <h2 id="feed-title">内容流</h2>
+      </div>
+      <p class="meta">前台统一展示内容，后台分类只服务 CMS 管理。</p>
+    </div>
+
+    <div class="waterfall" data-initial-count="8">
+      {
+        feedEntries.map((entry, index) => (
+          <article class="waterfall-card" data-feed-card data-card-index={index}>
+            <a href={getEntryHref(entry)} class="card-link">
+              <p class="meta">
+                {new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium" }).format(entry.data.pubDate)}
+              </p>
+              <h3>{entry.data.title}</h3>
+              <p>{entry.data.description}</p>
+            </a>
+            {
+              entry.data.tags.length > 0 && (
+                <ul class="tag-list" aria-label={`${entry.data.title} tags`}>
+                  {entry.data.tags.map((tag) => (
+                    <li>{tag}</li>
+                  ))}
+                </ul>
+              )
+            }
+          </article>
+        ))
+      }
+    </div>
+
+    <button id="expand-feed-button" class="expand-feed-button" type="button">
+      展开更多
+    </button>
+  </section>
+</BaseLayout>
+
+<script>
+  const button = document.getElementById("expand-feed-button") as HTMLButtonElement | null;
+  const cards = Array.from(document.querySelectorAll<HTMLElement>("[data-feed-card]"));
+  const initialCount = Number(document.querySelector(".waterfall")?.getAttribute("data-initial-count") ?? 8);
+  let visibleCount = initialCount;
+
+  function updateFeed() {
+    cards.forEach((card, index) => {
+      card.hidden = index >= visibleCount;
+    });
+
+    if (!button) return;
+
+    if (visibleCount >= cards.length) {
+      button.textContent = cards.length > initialCount ? "已展示全部" : "暂无更多内容";
+      button.disabled = true;
+    } else {
+      button.textContent = `展开更多（${cards.length - visibleCount}）`;
+      button.disabled = false;
+    }
+  }
+
+  button?.addEventListener("click", () => {
+    visibleCount += initialCount;
+    updateFeed();
+  });
+
+  updateFeed();
+</script>
+
+<style>
+  .home-feed {
+    padding-bottom: 2rem;
+  }
+
+  .feed-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .feed-heading h2 {
+    margin: 0;
+  }
+
+  .waterfall {
+    column-count: 3;
+    column-gap: 1rem;
+  }
+
+  .waterfall-card {
+    display: inline-block;
+    width: 100%;
+    break-inside: avoid;
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--surface);
+    margin: 0 0 1rem;
+    padding: 1.15rem;
+  }
+
+  .waterfall-card:nth-child(3n + 1) {
+    padding-bottom: 1.75rem;
+  }
+
+  .waterfall-card:nth-child(4n + 2) {
+    padding-bottom: 2.25rem;
+  }
+
+  .card-link {
+    display: block;
+    text-decoration: none;
+  }
+
+  .card-link h3 {
+    margin: 0.35rem 0 0.5rem;
+  }
+
+  .expand-feed-button {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--text);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 800;
+    margin: 1rem auto 0;
+    padding: 0.75rem 1.35rem;
+  }
+
+  .expand-feed-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  @media (max-width: 860px) {
+    .waterfall {
+      column-count: 2;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .feed-heading {
+      align-items: start;
+      flex-direction: column;
+    }
+
+    .waterfall {
+      column-count: 1;
+    }
+  }
+</style>

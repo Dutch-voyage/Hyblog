@@ -1,0 +1,25 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { getAllTags, getPublishedEntries, slugifyTag } from "@/lib/content";
+
+const entries = await getPublishedEntries();
+const tags = getAllTags(entries);
+---
+
+<BaseLayout title="标签" description="按标签浏览 Hybrid Blog 内容。">
+  <section class="hero">
+    <p class="eyebrow">Tags</p>
+    <h1>标签</h1>
+    <p class="lede">从 CMS 内容的 tags 字段自动生成。</p>
+  </section>
+
+  <ul class="tag-list">
+    {
+      tags.map((tag) => (
+        <li>
+          <a href={`/tags/${slugifyTag(tag)}/`}>{tag}</a>
+        </li>
+      ))
+    }
+  </ul>
+</BaseLayout>

@@ -1,0 +1,108 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { getEntryHref, getPublishedEntries } from "@/lib/content";
+
+const searchEntries = (await getPublishedEntries()).map((entry) => ({
+  title: entry.data.title,
+  description: entry.data.description,
+  tags: entry.data.tags,
+  type: entry.collection,
+  href: getEntryHref(entry),
+}));
+---
+
+<BaseLayout title="搜索" description="搜索 Hybrid Blog 的文章、笔记和 demo。">
+  <section class="hero">
+    <p class="eyebrow">Search</p>
+    <h1>搜索</h1>
+    <p class="lede">本地静态搜索，不需要后端服务。</p>
+  </section>
+
+  <section id="search-root" data-entries={JSON.stringify(searchEntries)}>
+    <label for="search-input">关键词</label>
+    <input id="search-input" type="search" placeholder="搜索标题、摘要、标签或类型" />
+    <ul id="search-results" class="content-list" aria-live="polite"></ul>
+  </section>
+</BaseLayout>
+
+<script>
+  const root = document.getElementById("search-root");
+  const input = document.getElementById("search-input") as HTMLInputElement | null;
+  const results = document.getElementById("search-results");
+  const entries = JSON.parse(root?.dataset.entries ?? "[]") as Array<{
+    title: string;
+    description: string;
+    tags: string[];
+    type: string;
+    href: string;
+  }>;
+
+  function render(items = entries) {
+    if (!results) return;
+
+    results.replaceChildren();
+
+    for (const entry of items) {
+      const item = document.createElement("li");
+      const article = document.createElement("article");
+      const type = document.createElement("p");
+      const heading = document.createElement("h3");
+      const link = document.createElement("a");
+      const description = document.createElement("p");
+      const tags = document.createElement("p");
+
+      article.className = "card";
+      type.className = "meta";
+      tags.className = "meta";
+      type.textContent = entry.type;
+      link.href = entry.href;
+      link.textContent = entry.title;
+      description.textContent = entry.description;
+      tags.textContent = entry.tags.join(", ");
+
+      heading.append(link);
+      article.append(type, heading, description, tags);
+      item.append(article);
+      results.append(item);
+    }
+  }
+
+  input?.addEventListener("input", () => {
+    const query = input.value.trim().toLowerCase();
+    if (!query) {
+      render();
+      return;
+    }
+
+    render(
+      entries.filter((entry) =>
+        [entry.title, entry.description, entry.type, ...entry.tags]
+          .join(" ")
+          .toLowerCase()
+          .includes(query),
+      ),
+    );
+  });
+
+  render();
+</script>
+
+<style>
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  input {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--surface);
+    color: var(--text);
+    margin-bottom: 1rem;
+    padding: 0.9rem 1rem;
+    font: inherit;
+  }
+</style>

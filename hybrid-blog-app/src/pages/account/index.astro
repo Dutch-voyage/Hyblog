@@ -1,0 +1,426 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="账户 / Account" description="Lightweight local account for hybrid-blog readers">
+  <section class="account-page">
+    <header class="account-header">
+      <p class="eyebrow">Local Account</p>
+      <h1 id="account-heading">账户 / Account</h1>
+      <p class="lede" id="account-lede">
+        一个仅存储在你本地浏览器的轻量账户。用户名是必填的；密码是可选的——只要你不在意账户被别人冒用。
+        <br />
+        A lightweight account that lives only in this browser. Username is required; password is optional — only if you don't mind impersonation.
+      </p>
+    </header>
+
+    <!-- Logged-out view -->
+    <section id="auth-forms" class="auth-forms" hidden>
+      <div class="tab-row" role="tablist">
+        <button id="tab-signin" class="tab active" role="tab" type="button">Sign in / 登录</button>
+        <button id="tab-signup" class="tab" role="tab" type="button">Sign up / 注册</button>
+      </div>
+
+      <form id="auth-form" class="auth-form" autocomplete="off">
+        <label class="field">
+          <span class="field-label">Username / 用户名</span>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            maxlength="32"
+            required
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
+          />
+          <span class="field-hint">
+            字母 / 数字 / _ / . / - · letters, digits, _ . -
+          </span>
+        </label>
+
+        <label class="field">
+          <span class="field-label">
+            Password / 密码
+            <span id="password-mode" class="field-mode">(optional · 可选)</span>
+          </span>
+          <input type="password" id="password" name="password" autocomplete="new-password" />
+          <span id="password-hint" class="field-hint">
+            留空 = 无密码登录（仅靠用户名）· empty = passwordless sign-in
+          </span>
+        </label>
+
+        <p id="auth-error" class="auth-error" hidden></p>
+
+        <button id="auth-submit" class="quiz-btn primary" type="submit">Sign in / 登录</button>
+      </form>
+    </section>
+
+    <!-- Logged-in view -->
+    <section id="profile-view" class="profile-view" hidden>
+      <div class="profile-card">
+        <p class="meta">Signed in as · 当前登录：</p>
+        <h2 id="profile-username"></h2>
+        <p id="profile-meta" class="meta"></p>
+        <div class="profile-actions">
+          <button id="signout-btn" class="quiz-btn outline" type="button">Sign out / 登出</button>
+        </div>
+      </div>
+
+      <h2 class="history-title">Quiz history · 测试记录</h2>
+      <ul id="history-list" class="history-list"></ul>
+      <p id="history-empty" class="history-empty" hidden>
+        No attempts yet. <a href="/quiz/">Take the quiz</a> first.
+        <br />
+        还没有记录。先去 <a href="/quiz/">测试人格</a>。
+      </p>
+    </section>
+  </section>
+</BaseLayout>
+
+<script>
+  import {
+    signUp,
+    signIn,
+    signOut,
+    getCurrentUser,
+    describeError,
+    type LocalUser,
+  } from '@/lib/auth';
+  import { loadHistory, type QuizAttempt } from '@/lib/quiz/history';
+  import { getTypeById } from '@/lib/quiz/engine';
+
+  const $forms = document.getElementById('auth-forms')!;
+  const $profile = document.getElementById('profile-view')!;
+  const $tabSignIn = document.getElementById('tab-signin') as HTMLButtonElement;
+  const $tabSignUp = document.getElementById('tab-signup') as HTMLButtonElement;
+  const $form = document.getElementById('auth-form') as HTMLFormElement;
+  const $submit = document.getElementById('auth-submit') as HTMLButtonElement;
+  const $username = document.getElementById('username') as HTMLInputElement;
+  const $password = document.getElementById('password') as HTMLInputElement;
+  const $error = document.getElementById('auth-error') as HTMLParagraphElement;
+  const $signoutBtn = document.getElementById('signout-btn') as HTMLButtonElement;
+  const $profileUsername = document.getElementById('profile-username')!;
+  const $profileMeta = document.getElementById('profile-meta')!;
+  const $historyList = document.getElementById('history-list')!;
+  const $historyEmpty = document.getElementById('history-empty')!;
+
+  type Mode = 'signin' | 'signup';
+  let mode: Mode = 'signin';
+
+  function setMode(next: Mode) {
+    mode = next;
+    $tabSignIn.classList.toggle('active', mode === 'signin');
+    $tabSignUp.classList.toggle('active', mode === 'signup');
+    $submit.textContent = mode === 'signin' ? 'Sign in / 登录' : 'Create account / 注册';
+    hideError();
+  }
+
+  function showError(msg: string) {
+    $error.textContent = msg;
+    $error.hidden = false;
+  }
+
+  function hideError() {
+    $error.textContent = '';
+    $error.hidden = true;
+  }
+
+  function formatDate(iso: string): string {
+    try {
+      return new Intl.DateTimeFormat(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }).format(new Date(iso));
+    } catch {
+      return iso;
+    }
+  }
+
+  function renderProfile(user: LocalUser) {
+    $forms.hidden = true;
+    $profile.hidden = false;
+    $profileUsername.textContent = user.username;
+    const created = formatDate(user.createdAt);
+    const last = user.lastSignInAt ? formatDate(user.lastSignInAt) : '—';
+    const lockState = user.password
+      ? '🔒 password protected · 已设置密码'
+      : '🔓 passwordless · 未设置密码';
+    $profileMeta.textContent = `${lockState} · created ${created} · last sign-in ${last}`;
+
+    const history = loadHistory();
+    $historyList.innerHTML = '';
+    if (history.length === 0) {
+      $historyEmpty.hidden = false;
+      return;
+    }
+    $historyEmpty.hidden = true;
+    for (const attempt of history) {
+      $historyList.appendChild(renderAttempt(attempt));
+    }
+  }
+
+  function renderAttempt(att: QuizAttempt): HTMLElement {
+    const li = document.createElement('li');
+    li.className = 'history-item';
+    const type = getTypeById(att.type);
+    const label = type ? (att.locale === 'zh' ? type.label.zh : type.label.en) : att.type;
+    const when = formatDate(att.takenAt);
+    li.innerHTML = `
+      <div class="history-row">
+        <div class="history-main">
+          <p class="history-label">${label}</p>
+          <p class="meta">${when} · locale ${att.locale} · v${att.quizVersion}</p>
+        </div>
+        <a class="history-link" href="/quiz/result/?type=${encodeURIComponent(att.type)}&flavor=${encodeURIComponent(att.soulFlavor)}&locale=${att.locale}">View →</a>
+      </div>
+    `;
+    return li;
+  }
+
+  function renderLoggedOut() {
+    $forms.hidden = false;
+    $profile.hidden = true;
+    setMode('signin');
+    $username.value = '';
+    $password.value = '';
+  }
+
+  $tabSignIn.addEventListener('click', () => setMode('signin'));
+  $tabSignUp.addEventListener('click', () => setMode('signup'));
+
+  $form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideError();
+    $submit.disabled = true;
+    try {
+      const username = $username.value.trim();
+      const password = $password.value;
+      const user =
+        mode === 'signup'
+          ? await signUp({ username, password: password || undefined })
+          : await signIn({ username, password: password || undefined });
+      renderProfile(user);
+    } catch (err) {
+      const browserLocale = navigator.language?.toLowerCase().startsWith('zh') ? 'zh' : 'en';
+      showError(describeError(err, browserLocale));
+    } finally {
+      $submit.disabled = false;
+    }
+  });
+
+  $signoutBtn.addEventListener('click', () => {
+    signOut();
+    renderLoggedOut();
+  });
+
+  // Initial render
+  const current = getCurrentUser();
+  if (current) {
+    renderProfile(current);
+  } else {
+    renderLoggedOut();
+  }
+</script>
+
+<style>
+  .account-page {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 2rem 0 4rem;
+  }
+
+  .account-header {
+    margin-bottom: 2rem;
+  }
+
+  .account-header h1 {
+    margin: 0.4rem 0 0.75rem;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+  }
+
+  .account-page > [hidden] {
+    display: none !important;
+  }
+
+  /* ---------- Tabs ---------- */
+  .tab-row {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+  }
+
+  .tab {
+    background: none;
+    border: none;
+    font: inherit;
+    color: var(--muted);
+    padding: 0.6rem 0.25rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+
+  .tab.active {
+    color: var(--text);
+    font-weight: 700;
+    border-bottom-color: var(--accent);
+  }
+
+  /* ---------- Form ---------- */
+  .auth-form {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .field {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .field-label {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .field-mode {
+    color: var(--muted);
+    font-weight: 400;
+    font-size: 0.85rem;
+    margin-left: 0.4rem;
+  }
+
+  .field input {
+    font: inherit;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 0.6rem;
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .field input:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  .field-hint {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .auth-error {
+    color: #c0392b;
+    background: color-mix(in srgb, #c0392b, transparent 92%);
+    border: 1px solid color-mix(in srgb, #c0392b, transparent 70%);
+    padding: 0.6rem 0.85rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    margin: 0;
+  }
+
+  /* ---------- Buttons (shared with quiz) ---------- */
+  .quiz-btn {
+    font: inherit;
+    cursor: pointer;
+    border: none;
+    border-radius: 999px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.15s ease;
+  }
+
+  .quiz-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .quiz-btn.primary {
+    background: var(--accent);
+    color: var(--background);
+  }
+
+  .quiz-btn.primary:hover:not(:disabled) {
+    filter: brightness(1.12);
+  }
+
+  .quiz-btn.outline {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .quiz-btn.outline:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* ---------- Profile view ---------- */
+  .profile-card {
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--surface);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .profile-card h2 {
+    margin: 0.2rem 0 0.5rem;
+    font-size: 1.6rem;
+  }
+
+  .profile-actions {
+    margin-top: 1rem;
+  }
+
+  .history-title {
+    font-size: 1.1rem;
+    margin: 1.5rem 0 0.75rem;
+  }
+
+  .history-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .history-item {
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--surface);
+    padding: 0.85rem 1rem;
+  }
+
+  .history-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .history-label {
+    margin: 0 0 0.15rem;
+    font-weight: 700;
+  }
+
+  .history-link {
+    font-size: 0.9rem;
+    text-decoration: none;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  .history-link:hover {
+    text-decoration: underline;
+  }
+
+  .history-empty {
+    color: var(--muted);
+  }
+</style>

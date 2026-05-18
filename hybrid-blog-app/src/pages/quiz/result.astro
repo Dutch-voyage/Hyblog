@@ -1,0 +1,421 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Your Model Spec" description="Your LLM personality quiz result">
+  <div id="result-app" class="result-container">
+    <section id="result-content" class="result-content" hidden>
+      <!-- Type header -->
+      <div class="result-header">
+        <p class="eyebrow" id="result-eyebrow">Your Model Spec</p>
+        <h1 id="result-label" class="result-label"></h1>
+        <p id="result-oneliner" class="result-oneliner"></p>
+      </div>
+
+      <!-- Soul flavor badge -->
+      <div id="result-flavor" class="flavor-badge"></div>
+
+      <!-- Description -->
+      <div id="result-description" class="result-description"></div>
+
+      <!-- Dimension radar (text-based) -->
+      <div class="dimension-section">
+        <h2 id="dim-title" class="dim-title">Dimension Profile</h2>
+        <div id="dimension-bars" class="dimension-bars"></div>
+      </div>
+
+      <!-- Compatibility -->
+      <div class="compat-section">
+        <h2 id="compat-title">Compatibility</h2>
+        <div class="compat-grid">
+          <div class="compat-card allies">
+            <h3 id="allies-title">Vibes with</h3>
+            <ul id="allies-list"></ul>
+          </div>
+          <div class="compat-card rivals">
+            <h3 id="rivals-title">Conflicts with</h3>
+            <ul id="rivals-list"></ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile saved notice -->
+      <div id="profile-notice" class="profile-notice"></div>
+
+      <!-- Actions -->
+      <div class="result-actions">
+        <a href="/quiz/" id="retake-btn" class="quiz-btn outline">Retake Quiz</a>
+        <a href="/" id="blog-btn" class="quiz-btn primary">Explore the Blog</a>
+      </div>
+    </section>
+
+    <!-- Fallback when no params -->
+    <section id="result-fallback" class="result-fallback">
+      <h1>No result found</h1>
+      <p>Take the quiz first to get your model spec.</p>
+      <a href="/quiz/" class="quiz-btn primary">Take the Quiz</a>
+    </section>
+  </div>
+</BaseLayout>
+
+<script>
+  import { getTypeById, getFlavorById } from '@/lib/quiz/engine';
+  import { DIMENSIONS, CORE_DIMENSION_COUNT } from '@/lib/quiz/dimensions';
+  import { UI, t, type Locale } from '@/lib/quiz/i18n';
+  import { loadProfile } from '@/lib/readerProfile';
+
+  const params = new URLSearchParams(window.location.search);
+  const typeId = params.get('type');
+  const flavorId = params.get('flavor') ?? 'balanced';
+  let locale: Locale = (params.get('locale') as Locale) ?? 'en';
+
+  const $content = document.getElementById('result-content')!;
+  const $fallback = document.getElementById('result-fallback')!;
+
+  const pType = typeId ? getTypeById(typeId) : undefined;
+  const flavor = getFlavorById(flavorId);
+
+  if (!pType) {
+    $fallback.hidden = false;
+    $content.hidden = true;
+  } else {
+    $fallback.hidden = true;
+    $content.hidden = false;
+
+    // Header
+    document.getElementById('result-eyebrow')!.textContent = t(UI.resultTitle, locale);
+    document.getElementById('result-label')!.textContent = t(pType.label, locale);
+    document.getElementById('result-oneliner')!.textContent = t(pType.oneLiner, locale);
+
+    // Soul flavor
+    const $flavor = document.getElementById('result-flavor')!;
+    $flavor.textContent = t(flavor.badge, locale);
+
+    // Description
+    document.getElementById('result-description')!.textContent = t(pType.description, locale);
+
+    // Dimension bars - show the type's vector against core dimensions
+    document.getElementById('dim-title')!.textContent =
+      locale === 'en' ? 'Dimension Profile' : '维度档案';
+    const $bars = document.getElementById('dimension-bars')!;
+
+    const profile = loadProfile();
+    const userScores = profile?.scores;
+
+    for (let i = 0; i < CORE_DIMENSION_COUNT; i++) {
+      const dim = DIMENSIONS[i];
+      const typeVal = pType.vector[i];
+      const userVal = userScores ? userScores[i] : typeVal;
+      const pct = ((userVal - 1) / 6) * 100;
+
+      const row = document.createElement('div');
+      row.className = 'dim-row';
+      row.innerHTML = `
+        <div class="dim-labels">
+          <span class="dim-low">${t(dim.low, locale)}</span>
+          <span class="dim-name">${t(dim.label, locale)}</span>
+          <span class="dim-high">${t(dim.high, locale)}</span>
+        </div>
+        <div class="dim-track">
+          <div class="dim-fill" style="width:${pct}%"></div>
+          <div class="dim-marker" style="left:${pct}%"></div>
+        </div>
+      `;
+      $bars.appendChild(row);
+    }
+
+    // Compatibility
+    document.getElementById('compat-title')!.textContent = t(UI.compatLabel, locale);
+    document.getElementById('allies-title')!.textContent = t(UI.alliesLabel, locale);
+    document.getElementById('rivals-title')!.textContent = t(UI.rivalsLabel, locale);
+
+    const $allies = document.getElementById('allies-list')!;
+    const $rivals = document.getElementById('rivals-list')!;
+
+    for (const allyId of pType.allies) {
+      const ally = getTypeById(allyId);
+      if (!ally) continue;
+      const li = document.createElement('li');
+      li.textContent = t(ally.label, locale);
+      $allies.appendChild(li);
+    }
+
+    for (const rivalId of pType.rivals) {
+      const rival = getTypeById(rivalId);
+      if (!rival) continue;
+      const li = document.createElement('li');
+      li.textContent = t(rival.label, locale);
+      $rivals.appendChild(li);
+    }
+
+    // Profile notice
+    document.getElementById('profile-notice')!.textContent = t(UI.profileSaved, locale);
+
+    // Action buttons
+    document.getElementById('retake-btn')!.textContent = t(UI.retakeButton, locale);
+    document.getElementById('blog-btn')!.textContent = t(UI.backToBlog, locale);
+  }
+</script>
+
+<style>
+  .result-container {
+    padding: 2rem 0 3rem;
+  }
+
+  .result-content {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  /* ---------- Header ---------- */
+  .result-header {
+    text-align: center;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+  }
+
+  .result-label {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    letter-spacing: -0.04em;
+    margin: 0.4rem 0 0.75rem;
+  }
+
+  .result-oneliner {
+    font-size: 1.15rem;
+    color: var(--muted);
+    max-width: 540px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+
+  /* ---------- Flavor badge ---------- */
+  .flavor-badge {
+    display: inline-block;
+    background: var(--accent-soft);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.35rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin: 0 auto 2rem;
+    text-align: center;
+    width: fit-content;
+  }
+
+  .result-content > .flavor-badge {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* ---------- Description ---------- */
+  .result-description {
+    font-size: 1.05rem;
+    line-height: 1.75;
+    color: color-mix(in srgb, var(--text), var(--muted) 15%);
+    margin-bottom: 2.5rem;
+  }
+
+  /* ---------- Dimension bars ---------- */
+  .dimension-section {
+    margin-bottom: 2.5rem;
+  }
+
+  .dim-title {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+
+  .dimension-bars {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .dim-row {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .dim-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .dim-name {
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .dim-low, .dim-high {
+    min-width: 60px;
+  }
+
+  .dim-high {
+    text-align: right;
+  }
+
+  .dim-track {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    position: relative;
+    overflow: visible;
+  }
+
+  .dim-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-soft), var(--accent));
+    border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+
+  .dim-marker {
+    position: absolute;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    background: var(--accent);
+    border: 2px solid var(--background);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  /* ---------- Compatibility ---------- */
+  .compat-section {
+    margin-bottom: 2rem;
+  }
+
+  .compat-section h2 {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .compat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .compat-card {
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--surface);
+    padding: 1rem;
+  }
+
+  .compat-card h3 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin: 0 0 0.5rem;
+  }
+
+  .compat-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .compat-card li {
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .compat-card.allies li {
+    color: var(--accent);
+  }
+
+  .compat-card.rivals li {
+    color: var(--muted);
+  }
+
+  /* ---------- Profile notice ---------- */
+  .profile-notice {
+    background: var(--accent-soft);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 0.85rem 1.15rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 2rem;
+    line-height: 1.55;
+  }
+
+  /* ---------- Actions ---------- */
+  .result-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .quiz-btn {
+    font: inherit;
+    cursor: pointer;
+    border: none;
+    border-radius: 999px;
+    padding: 0.75rem 2rem;
+    font-weight: 700;
+    text-decoration: none;
+    text-align: center;
+    transition: all 0.15s ease;
+  }
+
+  .quiz-btn.primary {
+    background: var(--accent);
+    color: var(--background);
+  }
+
+  .quiz-btn.primary:hover {
+    filter: brightness(1.12);
+  }
+
+  .quiz-btn.outline {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .quiz-btn.outline:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* ---------- Fallback ---------- */
+  .result-fallback {
+    text-align: center;
+    padding: 4rem 0;
+  }
+
+  .result-fallback[hidden] {
+    display: none;
+  }
+
+  .result-fallback h1 {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .result-fallback p {
+    margin-bottom: 2rem;
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 560px) {
+    .compat-grid {
+      grid-template-columns: 1fr;
+    }
+    .result-label {
+      font-size: 1.8rem;
+    }
+  }
+</style>

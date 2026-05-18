@@ -1,0 +1,33 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { authorProfiles } from "@/lib/authors";
+---
+
+<BaseLayout title="作者" description="Hybrid Blog 的作者和草稿贡献身份。">
+  <section class="hero">
+    <p class="eyebrow">Authors</p>
+    <h1>作者</h1>
+    <p class="lede">作者资料由 Pages CMS 管理，用于区分个人写作、协作投稿和 agent 草稿来源。</p>
+  </section>
+
+  <div class="grid">
+    {
+      authorProfiles.map((author) => (
+        <article class="card">
+          <p class="meta">{author.role}</p>
+          <h2><a href={`/authors/${author.id}/`}>{author.name}</a></h2>
+          <p>{author.bio}</p>
+          {
+            author.links.length > 0 && (
+              <ul class="tag-list" aria-label={`${author.name} links`}>
+                {author.links.map((link) => (
+                  <li><a href={link.href}>{link.label}</a></li>
+                ))}
+              </ul>
+            )
+          }
+        </article>
+      ))
+    }
+  </div>
+</BaseLayout>

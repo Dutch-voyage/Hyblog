@@ -1,0 +1,59 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import ContentCard from "@/components/ContentCard.astro";
+import { authorProfiles, type AuthorProfile } from "@/lib/authors";
+import { getEntryHref, getPublishedEntries, type PublishedEntry } from "@/lib/content";
+
+export async function getStaticPaths() {
+  const entries = await getPublishedEntries();
+
+  return authorProfiles.map((author) => ({
+    params: { author: author.id },
+    props: {
+      author,
+      entries: entries.filter((entry) => entry.data.authors.includes(author.id)),
+    },
+  }));
+}
+
+const { author, entries } = Astro.props as {
+  author: AuthorProfile;
+  entries: PublishedEntry[];
+};
+---
+
+<BaseLayout title={author.name} description={author.bio}>
+  <section class="hero">
+    <p class="eyebrow">{author.role}</p>
+    <h1>{author.name}</h1>
+    <p class="lede">{author.bio}</p>
+    {
+      author.links.length > 0 && (
+        <ul class="tag-list" aria-label={`${author.name} links`}>
+          {author.links.map((link) => (
+            <li><a href={link.href}>{link.label}</a></li>
+          ))}
+        </ul>
+      )
+    }
+  </section>
+
+  <section aria-labelledby="author-content-title">
+    <h2 id="author-content-title">已发布内容</h2>
+    <ul class="content-list">
+      {
+        entries.map((entry) => (
+          <li>
+            <ContentCard
+              href={getEntryHref(entry)}
+              title={entry.data.title}
+              description={entry.data.description}
+              pubDate={entry.data.pubDate}
+              tags={entry.data.tags}
+            />
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</BaseLayout>

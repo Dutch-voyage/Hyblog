@@ -1,0 +1,28 @@
+{
+  "name": "hybrid-blog",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "latest",
+    "@astrojs/rss": "latest",
+    "@astrojs/sitemap": "latest",
+    "@bjorn3/browser_wasi_shim": "^0.4.2",
+    "astro": "latest",
+    "browsercc": "^0.1.1",
+    "dompurify": "^3.4.2",
+    "marked": "^18.0.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "latest",
+    "typescript": "latest",
+    "vitest": "^4.1.5"
+  }
+}

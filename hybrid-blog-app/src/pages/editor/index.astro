@@ -1,0 +1,646 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import {
+  getAllEntries,
+  getEntrySourcePath,
+  getPublishedEntries,
+} from "@/lib/content";
+
+const draftPreviewsEnabled = import.meta.env.ENABLE_DRAFT_PREVIEWS === "true";
+const entries = draftPreviewsEnabled ? await getAllEntries() : await getPublishedEntries();
+
+function yamlString(value: string) {
+  return `"${value.replaceAll("\\", "\\\\").replaceAll("\"", "\\\"")}"`;
+}
+
+function yamlList(values: string[]) {
+  return values.length > 0 ? values.map((value) => `  - ${yamlString(value)}`).join("\n") : "  - \"\"";
+}
+
+function entryToMarkdown(entry: typeof entries[number]) {
+  const lines = [
+    "---",
+    `title: ${yamlString(entry.data.title)}`,
+    `description: ${yamlString(entry.data.description)}`,
+    `pubDate: ${entry.data.pubDate.toISOString().slice(0, 10)}`,
+    "authors:",
+    yamlList(entry.data.authors),
+    "tags:",
+    yamlList(entry.data.tags),
+    `status: ${yamlString(entry.data.status)}`,
+  ];
+
+  if (entry.data.updatedDate) {
+    lines.push(`updatedDate: ${entry.data.updatedDate.toISOString().slice(0, 10)}`);
+  }
+
+  if (entry.data.cover) {
+    lines.push(`cover: ${yamlString(entry.data.cover)}`);
+  }
+
+  if (entry.data.canonicalUrl) {
+    lines.push(`canonicalUrl: ${yamlString(entry.data.canonicalUrl)}`);
+  }
+
+  if (entry.collection === "demos") {
+    if (entry.data.demoUrl) {
+      lines.push(`demoUrl: ${yamlString(entry.data.demoUrl)}`);
+    }
+
+    if (entry.data.repositoryUrl) {
+      lines.push(`repositoryUrl: ${yamlString(entry.data.repositoryUrl)}`);
+    }
+  }
+
+  lines.push("formats:", yamlList(entry.data.formats), "---", "", entry.body ?? "");
+  return lines.join("\n");
+}
+
+const editableEntries = entries.map((entry) => ({
+  id: `${entry.collection}:${entry.id}`,
+  title: entry.data.title,
+  sourcePath: getEntrySourcePath(entry),
+  markdown: entryToMarkdown(entry),
+}));
+---
+
+<BaseLayout title="编辑工作台" description="Hybrid Blog 的内容发布、编辑和草稿预览入口。">
+  <section class="hero">
+    <p class="eyebrow">Editor</p>
+    <h1>编辑工作台</h1>
+    <p class="lede">
+      直接访问这里时只用于新建内容；已有页面会在页面自身提供编辑入口，跳转到对应的编辑模式。真正写入仍通过 Git 或 Pages CMS 完成。
+    </p>
+  </section>
+
+  <section
+    id="existing-edit-section"
+    aria-labelledby="existing-edit-title"
+    class="editor-panel markdown-editor"
+    data-editable-entries={JSON.stringify(editableEntries)}
+    hidden
+  >
+    <p class="eyebrow">Edit Mode</p>
+    <h2 id="existing-edit-title">编辑已有内容</h2>
+    <p>
+      这个模式只在从内容页面点击“编辑此页”后进入。当前页面是静态页面，不会直接写回文件；
+      修改后请复制内容并覆盖对应源文件，或下载后通过 Git/Pages CMS 提交。
+    </p>
+    <p>
+      当前正在编辑：<strong id="existing-entry-title">未选择内容</strong>
+    </p>
+    <p class="meta">
+      源文件：<code id="existing-entry-source">未选择内容</code>
+    </p>
+
+    <div id="missing-entry-message" class="editor-notice" hidden>
+      没有找到这个内容条目。请回到内容页重新点击“编辑此页”，或直接新建内容。
+    </div>
+
+    <div class="markdown-tabs" role="tablist" aria-label="Markdown editor modes">
+      <button id="markdown-edit-tab" class="tab-button active" type="button" role="tab" aria-selected="true">
+        编辑
+      </button>
+      <button id="markdown-preview-tab" class="tab-button" type="button" role="tab" aria-selected="false">
+        预览
+      </button>
+    </div>
+
+    <div id="markdown-edit-pane" class="markdown-pane active" role="tabpanel" aria-labelledby="markdown-edit-tab">
+      <textarea id="existing-markdown-editor" rows="22" spellcheck="false"></textarea>
+    </div>
+
+    <div
+      id="markdown-preview-pane"
+      class="markdown-pane markdown-preview"
+      role="tabpanel"
+      aria-labelledby="markdown-preview-tab"
+      hidden
+    >
+      <p class="meta">预览会渲染正文 Markdown，frontmatter 不参与渲染。MDX 组件语法会以普通文本或 HTML 形式保留。</p>
+      <div id="markdown-preview-output" class="preview-surface"></div>
+    </div>
+
+    <div class="editor-actions">
+      <button id="publish-existing-markdown" type="button">准备发布稿</button>
+      <button id="copy-existing-markdown" type="button">复制 Markdown</button>
+      <button id="download-existing-markdown" type="button">下载文件</button>
+      <a href="https://app.pagescms.org/" target="_blank" rel="noreferrer">打开 Pages CMS</a>
+      <a href="/editor/">新建内容</a>
+      <span id="markdown-action-status" class="meta" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section id="create-section" aria-labelledby="composer-title" class="editor-panel create-panel">
+    <h2 id="composer-title">新建内容</h2>
+    <p>
+      这里只负责从空白表单生成新的 Markdown/MDX 草稿。它和已有内容编辑模式相互独立。
+    </p>
+
+    <form id="composer-form" class="composer-grid">
+      <label>
+        类型
+        <select id="collection-field">
+          <option value="posts">文章</option>
+          <option value="notes">笔记</option>
+          <option value="demos">Demo</option>
+        </select>
+      </label>
+      <label>
+        状态
+        <select id="status-field">
+          <option value="draft">draft</option>
+          <option value="published">published</option>
+        </select>
+      </label>
+      <label>
+        标题
+        <input id="title-field" type="text" placeholder="内容标题" />
+      </label>
+      <label>
+        日期
+        <input id="date-field" type="date" />
+      </label>
+      <label class="wide">
+        摘要
+        <textarea id="description-field" rows="2" placeholder="一句话说明内容价值"></textarea>
+      </label>
+      <label>
+        作者 ID
+        <input id="authors-field" type="text" value="owner" />
+      </label>
+      <label>
+        标签
+        <input id="tags-field" type="text" placeholder="astro, cms, demo" />
+      </label>
+      <label>
+        格式
+        <input id="formats-field" type="text" value="blog" />
+      </label>
+      <label>
+        Demo URL
+        <input id="demo-url-field" type="url" placeholder="https://example.com" />
+      </label>
+      <label class="wide">
+        正文
+        <textarea id="body-field" rows="8" placeholder="从这里开始写正文"></textarea>
+      </label>
+    </form>
+
+    <label class="wide output-label">
+      生成结果
+      <textarea id="draft-output" rows="16" readonly></textarea>
+    </label>
+
+    <div class="editor-actions">
+      <button id="preview-draft-output" type="button">预览</button>
+      <button id="publish-draft-output" type="button">准备发布稿</button>
+      <button id="copy-draft-output" type="button">复制 Markdown</button>
+      <button id="download-draft-output" type="button">下载文件</button>
+      <a href="https://app.pagescms.org/" target="_blank" rel="noreferrer">打开 Pages CMS</a>
+      <span id="draft-action-status" class="meta" aria-live="polite"></span>
+    </div>
+
+    <div id="draft-preview-panel" class="draft-preview-panel" hidden>
+      <h3>当前预览</h3>
+      <p class="meta">预览会渲染正文 Markdown，frontmatter 不参与渲染。当前发布路线是把生成结果提交到 Pages CMS 或 Git。</p>
+      <div id="draft-preview-output" class="preview-surface"></div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import DOMPurify from "dompurify";
+  import { marked } from "marked";
+
+  const collectionField = document.getElementById("collection-field") as HTMLSelectElement | null;
+  const statusField = document.getElementById("status-field") as HTMLSelectElement | null;
+  const titleField = document.getElementById("title-field") as HTMLInputElement | null;
+  const dateField = document.getElementById("date-field") as HTMLInputElement | null;
+  const descriptionField = document.getElementById("description-field") as HTMLTextAreaElement | null;
+  const authorsField = document.getElementById("authors-field") as HTMLInputElement | null;
+  const tagsField = document.getElementById("tags-field") as HTMLInputElement | null;
+  const formatsField = document.getElementById("formats-field") as HTMLInputElement | null;
+  const demoUrlField = document.getElementById("demo-url-field") as HTMLInputElement | null;
+  const bodyField = document.getElementById("body-field") as HTMLTextAreaElement | null;
+  const output = document.getElementById("draft-output") as HTMLTextAreaElement | null;
+  const previewDraftOutput = document.getElementById("preview-draft-output") as HTMLButtonElement | null;
+  const publishDraftOutput = document.getElementById("publish-draft-output") as HTMLButtonElement | null;
+  const copyDraftOutput = document.getElementById("copy-draft-output") as HTMLButtonElement | null;
+  const downloadDraftOutput = document.getElementById("download-draft-output") as HTMLButtonElement | null;
+  const draftPreviewPanel = document.getElementById("draft-preview-panel") as HTMLElement | null;
+  const draftPreviewOutput = document.getElementById("draft-preview-output");
+  const draftActionStatus = document.getElementById("draft-action-status");
+  const createSection = document.getElementById("create-section") as HTMLElement | null;
+  const existingEditSection = document.getElementById("existing-edit-section") as HTMLElement | null;
+  const editableRoot = existingEditSection;
+  const missingEntryMessage = document.getElementById("missing-entry-message") as HTMLElement | null;
+  const existingEntryTitle = document.getElementById("existing-entry-title");
+  const existingEntrySource = document.getElementById("existing-entry-source");
+  const existingMarkdownEditor = document.getElementById("existing-markdown-editor") as HTMLTextAreaElement | null;
+  const markdownEditTab = document.getElementById("markdown-edit-tab") as HTMLButtonElement | null;
+  const markdownPreviewTab = document.getElementById("markdown-preview-tab") as HTMLButtonElement | null;
+  const markdownEditPane = document.getElementById("markdown-edit-pane") as HTMLElement | null;
+  const markdownPreviewPane = document.getElementById("markdown-preview-pane") as HTMLElement | null;
+  const markdownPreviewOutput = document.getElementById("markdown-preview-output");
+  const publishExistingMarkdown = document.getElementById("publish-existing-markdown") as HTMLButtonElement | null;
+  const copyExistingMarkdown = document.getElementById("copy-existing-markdown") as HTMLButtonElement | null;
+  const downloadExistingMarkdown = document.getElementById("download-existing-markdown") as HTMLButtonElement | null;
+  const markdownActionStatus = document.getElementById("markdown-action-status");
+  const editableEntries = JSON.parse(editableRoot?.dataset.editableEntries ?? "[]") as Array<{
+    id: string;
+    title: string;
+    sourcePath: string;
+    markdown: string;
+  }>;
+  let currentEditableEntryId = "";
+
+  const today = new Date().toISOString().slice(0, 10);
+  if (dateField) dateField.value = today;
+
+  function listFromInput(value: string) {
+    return value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  function renderYamlList(items: string[]) {
+    return items.length > 0 ? items.map((item) => `  - "${item}"`).join("\n") : "  - \"\"";
+  }
+
+  function updateDraft() {
+    if (!output) return;
+
+    const collection = collectionField?.value ?? "posts";
+    const title = titleField?.value.trim() || "Untitled";
+    const description = descriptionField?.value.trim() || "Draft description.";
+    const pubDate = dateField?.value || today;
+    const status = statusField?.value ?? "draft";
+    const authors = listFromInput(authorsField?.value ?? "owner");
+    const tags = listFromInput(tagsField?.value ?? "");
+    const formats = listFromInput(formatsField?.value ?? (collection === "notes" ? "short" : "blog"));
+    const body = bodyField?.value.trim() || "Write the content here.";
+    const demoUrl = demoUrlField?.value.trim();
+
+    const lines = [
+      "---",
+      `title: "${title}"`,
+      `description: "${description}"`,
+      `pubDate: ${pubDate}`,
+      "authors:",
+      renderYamlList(authors),
+      "tags:",
+      renderYamlList(tags),
+      `status: "${status}"`,
+    ];
+
+    if (collection === "demos" && demoUrl) {
+      lines.push(`demoUrl: "${demoUrl}"`);
+    }
+
+    lines.push("formats:", renderYamlList(formats), "---", "", body);
+    output.value = lines.join("\n");
+    if (draftPreviewPanel && !draftPreviewPanel.hidden) updateDraftPreview();
+  }
+
+  document.getElementById("composer-form")?.addEventListener("input", updateDraft);
+  updateDraft();
+
+  marked.setOptions({
+    gfm: true,
+    breaks: false,
+  });
+
+  function getSelectedEditableEntry() {
+    return editableEntries.find((entry) => entry.id === currentEditableEntryId);
+  }
+
+  function updateExistingEditor() {
+    const entry = getSelectedEditableEntry();
+
+    if (!entry) {
+      if (missingEntryMessage) missingEntryMessage.hidden = false;
+      if (existingMarkdownEditor) existingMarkdownEditor.value = "";
+      if (existingEntryTitle) existingEntryTitle.textContent = "未找到内容";
+      if (existingEntrySource) existingEntrySource.textContent = "未找到内容";
+      return;
+    }
+
+    if (missingEntryMessage) missingEntryMessage.hidden = true;
+    if (existingEntryTitle) existingEntryTitle.textContent = entry.title;
+    if (existingEntrySource) existingEntrySource.textContent = entry.sourcePath;
+    if (existingMarkdownEditor) existingMarkdownEditor.value = entry.markdown;
+    if (markdownActionStatus) markdownActionStatus.textContent = "";
+
+    updateMarkdownPreview();
+  }
+
+  function stripFrontmatter(markdown: string) {
+    return markdown.replace(/^---\s*[\s\S]*?\s*---\s*/, "");
+  }
+
+  function setMarkdownStatus(markdown: string, status: "draft" | "published") {
+    const frontmatterMatch = markdown.match(/^---\s*([\s\S]*?)\s*---/);
+    if (!frontmatterMatch) return markdown;
+
+    const frontmatter = frontmatterMatch[1] ?? "";
+    const nextFrontmatter = /^status:\s*.*$/m.test(frontmatter)
+      ? frontmatter.replace(/^status:\s*.*$/m, `status: "${status}"`)
+      : `${frontmatter.trimEnd()}\nstatus: "${status}"`;
+
+    return markdown.replace(/^---\s*[\s\S]*?\s*---/, `---\n${nextFrontmatter.trim()}\n---`);
+  }
+
+  function renderMarkdownPreview(markdown: string, target: Element | null) {
+    if (!target) return;
+
+    const html = marked.parse(stripFrontmatter(markdown), { async: false }) as string;
+    target.innerHTML = DOMPurify.sanitize(html);
+  }
+
+  function updateDraftPreview() {
+    if (!output) return;
+    renderMarkdownPreview(output.value, draftPreviewOutput);
+  }
+
+  function showDraftPreview() {
+    if (draftPreviewPanel) draftPreviewPanel.hidden = false;
+    updateDraftPreview();
+  }
+
+  function createDraftFileName() {
+    const collection = collectionField?.value ?? "posts";
+    const extension = collection === "demos" ? "mdx" : "md";
+    const title = titleField?.value.trim() || "untitled";
+    const slug = title
+      .toLowerCase()
+      .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "untitled";
+
+    return `${slug}.${extension}`;
+  }
+
+  function updateMarkdownPreview() {
+    if (!existingMarkdownEditor || !markdownPreviewOutput) return;
+
+    renderMarkdownPreview(existingMarkdownEditor.value, markdownPreviewOutput);
+  }
+
+  function setMarkdownMode(mode: "edit" | "preview") {
+    const isPreview = mode === "preview";
+
+    markdownEditTab?.classList.toggle("active", !isPreview);
+    markdownPreviewTab?.classList.toggle("active", isPreview);
+    markdownEditTab?.setAttribute("aria-selected", String(!isPreview));
+    markdownPreviewTab?.setAttribute("aria-selected", String(isPreview));
+
+    if (markdownEditPane) markdownEditPane.hidden = isPreview;
+    if (markdownPreviewPane) markdownPreviewPane.hidden = !isPreview;
+
+    if (isPreview) updateMarkdownPreview();
+  }
+
+  function initializeEditorMode() {
+    const entryId = new URLSearchParams(window.location.search).get("entry");
+
+    if (!entryId) {
+      if (createSection) createSection.hidden = false;
+      if (existingEditSection) existingEditSection.hidden = true;
+      return;
+    }
+
+    currentEditableEntryId = entryId;
+    if (createSection) createSection.hidden = true;
+    if (existingEditSection) existingEditSection.hidden = false;
+    updateExistingEditor();
+  }
+
+  existingMarkdownEditor?.addEventListener("input", updateMarkdownPreview);
+  markdownEditTab?.addEventListener("click", () => setMarkdownMode("edit"));
+  markdownPreviewTab?.addEventListener("click", () => setMarkdownMode("preview"));
+  initializeEditorMode();
+
+  previewDraftOutput?.addEventListener("click", () => {
+    showDraftPreview();
+    if (draftActionStatus) draftActionStatus.textContent = "已更新预览";
+  });
+
+  publishDraftOutput?.addEventListener("click", () => {
+    if (statusField) statusField.value = "published";
+    updateDraft();
+    showDraftPreview();
+    if (draftActionStatus) {
+      draftActionStatus.textContent = "已准备发布稿，请复制或下载后通过 Pages CMS/Git 提交。";
+    }
+  });
+
+  copyDraftOutput?.addEventListener("click", async () => {
+    if (!output || !draftActionStatus) return;
+
+    await navigator.clipboard.writeText(output.value);
+    draftActionStatus.textContent = "已复制";
+  });
+
+  downloadDraftOutput?.addEventListener("click", () => {
+    if (!output || !draftActionStatus) return;
+
+    const blob = new Blob([output.value], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = createDraftFileName();
+    link.click();
+    URL.revokeObjectURL(url);
+    draftActionStatus.textContent = "已下载";
+  });
+
+  publishExistingMarkdown?.addEventListener("click", () => {
+    if (!existingMarkdownEditor || !markdownActionStatus) return;
+
+    existingMarkdownEditor.value = setMarkdownStatus(existingMarkdownEditor.value, "published");
+    updateMarkdownPreview();
+    markdownActionStatus.textContent = "已准备发布稿，请复制或下载后通过 Pages CMS/Git 提交。";
+  });
+
+  copyExistingMarkdown?.addEventListener("click", async () => {
+    if (!existingMarkdownEditor || !markdownActionStatus) return;
+
+    await navigator.clipboard.writeText(existingMarkdownEditor.value);
+    markdownActionStatus.textContent = "已复制";
+  });
+
+  downloadExistingMarkdown?.addEventListener("click", () => {
+    const entry = getSelectedEditableEntry();
+
+    if (!entry || !existingMarkdownEditor || !markdownActionStatus) return;
+
+    const blob = new Blob([existingMarkdownEditor.value], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = entry.sourcePath.split("/").at(-1) ?? "content.md";
+    link.click();
+    URL.revokeObjectURL(url);
+    markdownActionStatus.textContent = "已下载";
+  });
+</script>
+
+<style>
+  .editor-panel {
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--surface);
+    padding: 1.25rem;
+  }
+
+  .create-panel {
+    margin-top: 1.5rem;
+  }
+
+  .composer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  label {
+    display: grid;
+    gap: 0.35rem;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .wide {
+    grid-column: 1 / -1;
+  }
+
+  input,
+  select,
+  textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--background);
+    color: var(--text);
+    padding: 0.75rem;
+    font: inherit;
+  }
+
+  .output-label {
+    margin-top: 1rem;
+  }
+
+  .draft-preview-panel {
+    margin-top: 1rem;
+  }
+
+  .editor-notice {
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--accent-soft);
+    margin: 1rem 0;
+    padding: 0.75rem;
+  }
+
+  .markdown-tabs {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--background);
+    margin: 0.75rem 0;
+    padding: 0.2rem;
+  }
+
+  .tab-button {
+    border: 0;
+    background: transparent;
+    border-radius: 999px;
+    padding: 0.45rem 0.9rem;
+  }
+
+  .tab-button.active {
+    background: var(--accent-soft);
+  }
+
+  .markdown-pane[hidden] {
+    display: none;
+  }
+
+  .preview-surface {
+    min-height: 28rem;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--background);
+    padding: 1.25rem;
+  }
+
+  .preview-surface > :first-child {
+    margin-top: 0;
+  }
+
+  .preview-surface img {
+    max-width: 100%;
+    border-radius: 0.75rem;
+  }
+
+  .preview-surface blockquote {
+    border-left: 4px solid var(--border);
+    color: var(--muted);
+    margin-left: 0;
+    padding-left: 1rem;
+  }
+
+  .preview-surface pre {
+    overflow-x: auto;
+    border-radius: 0.75rem;
+    background: #111827;
+    color: #f9fafb;
+    padding: 1rem;
+  }
+
+  .preview-surface :not(pre) > code {
+    border-radius: 0.35rem;
+    background: var(--accent-soft);
+    padding: 0.15rem 0.35rem;
+  }
+
+  .preview-surface table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .preview-surface th,
+  .preview-surface td {
+    border: 1px solid var(--border);
+    padding: 0.5rem;
+    text-align: left;
+  }
+
+  .editor-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  button {
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--text);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 800;
+    padding: 0.6rem 1rem;
+  }
+
+  @media (max-width: 760px) {
+    .editor-actions {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+</style>

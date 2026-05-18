@@ -1,0 +1,48 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import ContentCard from "@/components/ContentCard.astro";
+import {
+  getAllTags,
+  getEntryHref,
+  getPublishedEntries,
+  slugifyTag,
+  type PublishedEntry,
+} from "@/lib/content";
+
+export async function getStaticPaths() {
+  const entries = await getPublishedEntries();
+  return getAllTags(entries).map((tag) => ({
+    params: { tag: slugifyTag(tag) },
+    props: {
+      tag,
+      entries: entries.filter((entry) => entry.data.tags.includes(tag)),
+    },
+  }));
+}
+
+const { tag, entries } = Astro.props as { tag: string; entries: PublishedEntry[] };
+---
+
+<BaseLayout title={`标签：${tag}`} description={`浏览标签 ${tag} 下的内容。`}>
+  <section class="hero">
+    <p class="eyebrow">Tag</p>
+    <h1>{tag}</h1>
+    <p class="lede">共 {entries.length} 篇内容。</p>
+  </section>
+
+  <ul class="content-list">
+    {
+      entries.map((entry) => (
+        <li>
+          <ContentCard
+            href={getEntryHref(entry)}
+            title={entry.data.title}
+            description={entry.data.description}
+            pubDate={entry.data.pubDate}
+            tags={entry.data.tags}
+          />
+        </li>
+      ))
+    }
+  </ul>
+</BaseLayout>

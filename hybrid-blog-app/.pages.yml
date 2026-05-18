@@ -10,7 +10,7 @@ settings:
       rename: "content(rename): {oldPath} -> {newPath}"
 
 media:
-  input: hybrid-blog-app/public/images
+  input: public/images
   output: /images
   rename: safe
   categories: [image]
@@ -19,7 +19,7 @@ content:
   - name: site
     label: Site settings
     type: file
-    path: hybrid-blog-app/src/site.config.json
+    path: src/site.config.json
     format: json
     fields:
       - name: title
@@ -66,7 +66,7 @@ content:
   - name: authors
     label: Authors
     type: file
-    path: hybrid-blog-app/src/data/authors.json
+    path: src/data/authors.json
     format: json
     list: true
     fields:
@@ -109,7 +109,7 @@ content:
       - name: style-guide
         label: Style guide
         type: file
-        path: hybrid-blog-app/src/editorial/style-guide.md
+        path: src/editorial/style-guide.md
         format: yaml-frontmatter
         fields:
           - { name: title, label: Title, type: string, required: true }
@@ -119,7 +119,7 @@ content:
       - name: publishing-workflow
         label: Publishing workflow
         type: file
-        path: hybrid-blog-app/src/editorial/publishing-workflow.md
+        path: src/editorial/publishing-workflow.md
         format: yaml-frontmatter
         fields:
           - { name: title, label: Title, type: string, required: true }
@@ -129,7 +129,7 @@ content:
       - name: agent-draft-checklist
         label: Agent draft checklist
         type: file
-        path: hybrid-blog-app/src/editorial/agent-draft-checklist.md
+        path: src/editorial/agent-draft-checklist.md
         format: yaml-frontmatter
         fields:
           - { name: title, label: Title, type: string, required: true }
@@ -139,7 +139,7 @@ content:
   - name: posts
     label: Posts
     type: collection
-    path: hybrid-blog-app/src/content/posts
+    path: src/content/posts
     format: yaml-frontmatter
     filename:
       template: "{primary}.md"
@@ -165,7 +165,7 @@ content:
   - name: notes
     label: Notes
     type: collection
-    path: hybrid-blog-app/src/content/notes
+    path: src/content/notes
     format: yaml-frontmatter
     filename:
       template: "{primary}.md"
@@ -190,7 +190,7 @@ content:
   - name: demos
     label: Demos
     type: collection
-    path: hybrid-blog-app/src/content/demos
+    path: src/content/demos
     format: yaml-frontmatter
     filename:
       template: "{primary}.mdx"

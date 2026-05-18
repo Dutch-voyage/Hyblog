@@ -1,0 +1,404 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { compilerTimeoutMs, defaultSandboxLimits } from "@/lib/wasmSandbox";
+
+const defaultCppSource = `#include <iostream>
+#include <string>
+
+int main() {
+  std::string name;
+  std::cin >> name;
+  std::cout << "Hello, " << name << " from browser C++!" << std::endl;
+  return 0;
+}`;
+---
+
+<BaseLayout
+  title="WebAssembly Sandbox Demo"
+  description="一个使用浏览器 Web Worker 运行预编译 WebAssembly 模块的本地计算沙盒 demo。"
+>
+  <section class="hero">
+    <p class="eyebrow">Local compute lab</p>
+    <h1>WebAssembly 沙盒 Demo</h1>
+    <p class="lede">
+      这个 demo 会在用户明确同意后启动 Web Worker。它现在包含两个阶段：一个轻量的预编译 Wasm 运行器，
+      以及一个真实的浏览器端 C/C++ 编译器实验。
+    </p>
+  </section>
+
+  <section class="card sandbox-panel" data-timeout={defaultSandboxLimits.runTimeoutMs}>
+    <h2>运行设置</h2>
+    <p>
+      当前模块导出一个 <code>answer()</code> 函数并返回 <code>42</code>。你可以增加调用次数来观察本地 CPU
+      工作，也可以随时停止 worker。
+    </p>
+
+    <div class="controls">
+      <label>
+        Wasm 调用次数
+        <input id="iteration-input" type="number" min="1" max="5000000" step="1" value="100000" />
+      </label>
+      <button id="run-button" type="button">我同意使用本机计算并运行</button>
+      <button id="stop-button" type="button" disabled>停止</button>
+    </div>
+
+    <p class="meta">
+      安全限制：worker 隔离、{defaultSandboxLimits.runTimeoutMs}ms 超时、无 DOM 访问、无网络能力、无文件系统能力。
+    </p>
+  </section>
+
+  <section aria-labelledby="output-title" class="sandbox-output">
+    <h2 id="output-title">预编译 Wasm 输出</h2>
+    <pre id="sandbox-output">尚未运行。</pre>
+  </section>
+
+  <section class="card sandbox-panel" data-timeout={compilerTimeoutMs}>
+    <h2>C/C++ 编译器实验</h2>
+    <p>
+      这个实验使用 <code>browsercc</code> 在浏览器 worker 中加载 Clang/LLD 和 WASI sysroot，
+      编译源码为 WebAssembly，再用 WASI shim 执行。首次运行会下载较大的编译器资源。
+    </p>
+
+    <div class="compiler-grid">
+      <label>
+        语言
+        <select id="compiler-language">
+          <option value="cpp">C++20</option>
+          <option value="c">C17</option>
+        </select>
+      </label>
+      <label>
+        stdin
+        <input id="compiler-stdin" type="text" value="browsercc" />
+      </label>
+      <label class="wide">
+        源码
+        <textarea id="compiler-source" rows="12">{defaultCppSource}</textarea>
+      </label>
+      <div class="wide controls">
+        <button id="compile-button" type="button">我同意下载编译器并使用本机计算</button>
+        <button id="compile-stop-button" type="button" disabled>停止编译/运行</button>
+      </div>
+    </div>
+
+    <p class="meta">
+      安全限制：显式启动、worker 隔离、{compilerTimeoutMs}ms 超时、源码大小限制、无 DOM 访问。
+      这是实验功能，不要用于不可信的大型工程。
+    </p>
+  </section>
+
+  <section aria-labelledby="compiler-output-title" class="sandbox-output">
+    <h2 id="compiler-output-title">C/C++ 编译输出</h2>
+    <pre id="compiler-output">尚未运行。</pre>
+  </section>
+</BaseLayout>
+
+<script>
+  import {
+    compilerTimeoutMs,
+    createCompileTimeout,
+    createRunTimeout,
+    defaultSandboxLimits,
+    normalizeIterations,
+    validateSandboxFiles,
+    type CompilerLanguage,
+  } from "@/lib/wasmSandbox";
+
+  type WorkerMessage =
+    | { type: "progress"; message: string }
+    | { type: "result"; stdout: string; stderr: string; truncated: boolean; elapsedMs: number }
+    | { type: "error"; stderr: string; elapsedMs: number };
+
+  type CompilerWorkerMessage =
+    | { type: "progress"; message: string }
+    | { type: "compile-error"; compileOutput: string; elapsedMs: number; compileMs: number }
+    | {
+        type: "result";
+        stdout: string;
+        stderr: string;
+        truncated: boolean;
+        exitCode: number;
+        elapsedMs: number;
+        compileMs: number;
+        runMs: number;
+      }
+    | { type: "error"; phase: string; stderr: string; elapsedMs: number };
+
+  const runButton = document.getElementById("run-button") as HTMLButtonElement | null;
+  const stopButton = document.getElementById("stop-button") as HTMLButtonElement | null;
+  const iterationInput = document.getElementById("iteration-input") as HTMLInputElement | null;
+  const output = document.getElementById("sandbox-output");
+  const compileButton = document.getElementById("compile-button") as HTMLButtonElement | null;
+  const compileStopButton = document.getElementById("compile-stop-button") as HTMLButtonElement | null;
+  const compilerLanguage = document.getElementById("compiler-language") as HTMLSelectElement | null;
+  const compilerSource = document.getElementById("compiler-source") as HTMLTextAreaElement | null;
+  const compilerStdin = document.getElementById("compiler-stdin") as HTMLInputElement | null;
+  const compilerOutput = document.getElementById("compiler-output");
+
+  let worker: Worker | undefined;
+  let timeoutId: number | undefined;
+  let compilerWorker: Worker | undefined;
+  let compilerTimeoutId: number | undefined;
+
+  function writeOutput(message: string) {
+    if (output) output.textContent = message;
+  }
+
+  function cleanup() {
+    if (timeoutId !== undefined) {
+      window.clearTimeout(timeoutId);
+      timeoutId = undefined;
+    }
+
+    worker?.terminate();
+    worker = undefined;
+    if (runButton) runButton.disabled = false;
+    if (stopButton) stopButton.disabled = true;
+  }
+
+  function stopWithMessage(message: string) {
+    cleanup();
+    writeOutput(message);
+  }
+
+  runButton?.addEventListener("click", () => {
+    cleanup();
+
+    const iterations = normalizeIterations(
+      Number(iterationInput?.value ?? 1),
+      defaultSandboxLimits,
+    );
+
+    worker = new Worker(new URL("../../../workers/wasmRunner.worker.ts", import.meta.url), {
+      type: "module",
+    });
+
+    if (runButton) runButton.disabled = true;
+    if (stopButton) stopButton.disabled = false;
+
+    writeOutput("Starting worker...");
+
+    timeoutId = window.setTimeout(() => {
+      stopWithMessage(createRunTimeout(defaultSandboxLimits.runTimeoutMs));
+    }, defaultSandboxLimits.runTimeoutMs);
+
+    worker.addEventListener("message", (event: MessageEvent<WorkerMessage>) => {
+      const message = event.data;
+
+      if (message.type === "progress") {
+        writeOutput(message.message);
+        return;
+      }
+
+      if (message.type === "result") {
+        cleanup();
+        writeOutput(
+          [
+            message.stdout,
+            message.stderr ? `stderr:\n${message.stderr}` : "",
+            message.truncated ? "Output was truncated." : "",
+          ]
+            .filter(Boolean)
+            .join("\n\n"),
+        );
+        return;
+      }
+
+      cleanup();
+      writeOutput(`Sandbox error after ${message.elapsedMs.toFixed(2)}ms:\n${message.stderr}`);
+    });
+
+    worker.addEventListener("error", (event) => {
+      cleanup();
+      writeOutput(`Worker error: ${event.message}`);
+    });
+
+    worker.postMessage({ type: "run", iterations });
+  });
+
+  stopButton?.addEventListener("click", () => {
+    stopWithMessage("Sandbox stopped by user.");
+  });
+
+  function writeCompilerOutput(message: string) {
+    if (compilerOutput) compilerOutput.textContent = message;
+  }
+
+  function cleanupCompiler() {
+    if (compilerTimeoutId !== undefined) {
+      window.clearTimeout(compilerTimeoutId);
+      compilerTimeoutId = undefined;
+    }
+
+    compilerWorker?.terminate();
+    compilerWorker = undefined;
+    if (compileButton) compileButton.disabled = false;
+    if (compileStopButton) compileStopButton.disabled = true;
+  }
+
+  function stopCompilerWithMessage(message: string) {
+    cleanupCompiler();
+    writeCompilerOutput(message);
+  }
+
+  compileButton?.addEventListener("click", () => {
+    cleanupCompiler();
+
+    const language = (compilerLanguage?.value ?? "cpp") as CompilerLanguage;
+    const fileName = language === "cpp" ? "main.cpp" : "main.c";
+    const source = compilerSource?.value ?? "";
+    const validation = validateSandboxFiles([{ name: fileName, content: source }]);
+
+    if (!validation.ok) {
+      writeCompilerOutput(validation.errors.join("\n"));
+      return;
+    }
+
+    compilerWorker = new Worker(new URL("../../../workers/cppCompiler.worker.ts", import.meta.url), {
+      type: "module",
+    });
+
+    if (compileButton) compileButton.disabled = true;
+    if (compileStopButton) compileStopButton.disabled = false;
+
+    writeCompilerOutput("Starting browser C/C++ compiler worker...");
+
+    compilerTimeoutId = window.setTimeout(() => {
+      stopCompilerWithMessage(createCompileTimeout(compilerTimeoutMs));
+    }, compilerTimeoutMs);
+
+    compilerWorker.addEventListener("message", (event: MessageEvent<CompilerWorkerMessage>) => {
+      const message = event.data;
+
+      if (message.type === "progress") {
+        writeCompilerOutput(message.message);
+        return;
+      }
+
+      if (message.type === "compile-error") {
+        cleanupCompiler();
+        writeCompilerOutput(
+          [
+            "Compilation failed.",
+            `compileMs: ${message.compileMs.toFixed(2)}`,
+            message.compileOutput,
+          ].join("\n\n"),
+        );
+        return;
+      }
+
+      if (message.type === "result") {
+        cleanupCompiler();
+        writeCompilerOutput(
+          [
+            `exitCode: ${message.exitCode}`,
+            `compileMs: ${message.compileMs.toFixed(2)}`,
+            `runMs: ${message.runMs.toFixed(2)}`,
+            `elapsedMs: ${message.elapsedMs.toFixed(2)}`,
+            "",
+            "stdout:",
+            message.stdout || "(empty)",
+            "",
+            "stderr:",
+            message.stderr || "(empty)",
+            message.truncated ? "\nOutput was truncated." : "",
+          ].join("\n"),
+        );
+        return;
+      }
+
+      cleanupCompiler();
+      writeCompilerOutput(
+        `Compiler sandbox ${message.phase} error after ${message.elapsedMs.toFixed(2)}ms:\n${message.stderr}`,
+      );
+    });
+
+    compilerWorker.addEventListener("error", (event) => {
+      cleanupCompiler();
+      writeCompilerOutput(`Compiler worker error: ${event.message}`);
+    });
+
+    compilerWorker.postMessage({
+      type: "compile-run",
+      language,
+      source,
+      stdin: compilerStdin?.value ?? "",
+    });
+  });
+
+  compileStopButton?.addEventListener("click", () => {
+    stopCompilerWithMessage("Compiler sandbox stopped by user.");
+  });
+</script>
+
+<style>
+  .sandbox-panel {
+    margin-bottom: 2rem;
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) auto auto;
+    gap: 0.75rem;
+    align-items: end;
+    margin: 1rem 0;
+  }
+
+  label {
+    display: grid;
+    gap: 0.35rem;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  input,
+  select,
+  textarea {
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--background);
+    color: var(--text);
+    padding: 0.75rem;
+    font: inherit;
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  button {
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--accent-soft);
+    color: var(--text);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+    padding: 0.75rem 1rem;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  .compiler-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+
+  .wide {
+    grid-column: 1 / -1;
+  }
+
+  .sandbox-output {
+    margin-bottom: 2rem;
+  }
+
+  @media (max-width: 760px) {
+    .controls {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

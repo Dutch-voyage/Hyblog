@@ -1,0 +1,396 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="What Model Are You?" description="An ironic personality test for LLM-era readers">
+  <div id="quiz-app" class="quiz-container">
+    <!-- Landing -->
+    <section id="quiz-landing" class="quiz-landing">
+      <p class="eyebrow" id="landing-eyebrow">Personality Inference v0.1</p>
+      <h1 id="landing-title">What Model Are You?</h1>
+      <p class="lede" id="landing-subtitle">An ironic personality test for LLM-era readers</p>
+      <p class="quiz-meta" id="landing-meta">30 questions &middot; ~3 min</p>
+      <button id="start-btn" class="quiz-btn primary" type="button">Initialize Inference</button>
+      <button id="lang-toggle" class="quiz-btn ghost lang-toggle" type="button">中文</button>
+    </section>
+
+    <!-- Question flow -->
+    <section id="quiz-questions" class="quiz-questions" hidden>
+      <div class="quiz-topbar">
+        <div class="progress-info">
+          <span id="progress-text">Question 1 of 30</span>
+          <button id="lang-toggle-q" class="quiz-btn ghost lang-toggle small" type="button">中文</button>
+        </div>
+        <div class="progress-bar-track">
+          <div id="progress-bar" class="progress-bar-fill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div id="question-card" class="question-card">
+        <p id="question-text" class="question-text"></p>
+        <div id="options-container" class="options-container"></div>
+      </div>
+    </section>
+
+    <!-- Computing screen -->
+    <section id="quiz-computing" class="quiz-computing" hidden>
+      <div class="computing-inner">
+        <div class="spinner"></div>
+        <p id="computing-text" class="computing-text">Computing your type vector...</p>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<script>
+  import { QUESTIONS } from '@/lib/quiz/questions';
+  import { computeScores, matchType, getSoulFlavor, scoresToVector } from '@/lib/quiz/engine';
+  import { UI, type Locale, t } from '@/lib/quiz/i18n';
+  import { saveProfile } from '@/lib/readerProfile';
+  import { appendAttempt } from '@/lib/quiz/history';
+
+  type Phase = 'landing' | 'questions' | 'computing';
+
+  let locale: Locale = 'en';
+  let currentQ = 0;
+  const answers: Record<string, string> = {};
+
+  const $landing = document.getElementById('quiz-landing')!;
+  const $questions = document.getElementById('quiz-questions')!;
+  const $computing = document.getElementById('quiz-computing')!;
+  const $startBtn = document.getElementById('start-btn')!;
+  const $langToggle = document.getElementById('lang-toggle')!;
+  const $langToggleQ = document.getElementById('lang-toggle-q')!;
+  const $progressText = document.getElementById('progress-text')!;
+  const $progressBar = document.getElementById('progress-bar')!;
+  const $questionText = document.getElementById('question-text')!;
+  const $optionsContainer = document.getElementById('options-container')!;
+
+  function showPhase(phase: Phase) {
+    $landing.hidden = phase !== 'landing';
+    $questions.hidden = phase !== 'questions';
+    $computing.hidden = phase !== 'computing';
+  }
+
+  function updateLandingText() {
+    document.getElementById('landing-eyebrow')!.textContent = 'Personality Inference v0.1';
+    document.getElementById('landing-title')!.textContent = t(UI.quizTitle, locale);
+    document.getElementById('landing-subtitle')!.textContent = t(UI.quizSubtitle, locale);
+    document.getElementById('landing-meta')!.textContent =
+      locale === 'en'
+        ? `${QUESTIONS.length} questions \u00b7 ~4 min`
+        : `${QUESTIONS.length}题 \u00b7 约4分钟`;
+    $startBtn.textContent = t(UI.startButton, locale);
+    $langToggle.textContent = t(UI.langToggle, locale);
+    $langToggleQ.textContent = t(UI.langToggle, locale);
+    document.getElementById('computing-text')!.textContent = t(UI.computing, locale);
+  }
+
+  function toggleLocale() {
+    locale = locale === 'en' ? 'zh' : 'en';
+    updateLandingText();
+    if (!$questions.hidden) renderQuestion();
+  }
+
+  function renderQuestion() {
+    const q = QUESTIONS[currentQ];
+    const pct = ((currentQ) / QUESTIONS.length) * 100;
+    $progressBar.style.width = `${pct}%`;
+
+    if (locale === 'en') {
+      $progressText.textContent = `Question ${currentQ + 1} of ${QUESTIONS.length}`;
+    } else {
+      $progressText.textContent = `第 ${currentQ + 1} / ${QUESTIONS.length} 题`;
+    }
+
+    $questionText.textContent = t(q.text, locale);
+    $optionsContainer.innerHTML = '';
+
+    const isBinary = q.kind === 'binary';
+
+    q.options.forEach((opt) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `option-btn${isBinary ? ' binary' : ''}`;
+      btn.textContent = t(opt.text, locale);
+      btn.addEventListener('click', () => selectOption(q.id, opt.id));
+      $optionsContainer.appendChild(btn);
+    });
+
+    $langToggleQ.textContent = t(UI.langToggle, locale);
+  }
+
+  function selectOption(questionId: string, optionId: string) {
+    answers[questionId] = optionId;
+
+    const allBtns = $optionsContainer.querySelectorAll<HTMLButtonElement>('.option-btn');
+    allBtns.forEach((btn) => btn.classList.remove('selected'));
+    const idx = QUESTIONS[currentQ].options.findIndex((o) => o.id === optionId);
+    if (idx >= 0 && allBtns[idx]) allBtns[idx].classList.add('selected');
+
+    setTimeout(() => {
+      if (currentQ < QUESTIONS.length - 1) {
+        currentQ++;
+        renderQuestion();
+      } else {
+        finishQuiz();
+      }
+    }, 250);
+  }
+
+  function finishQuiz() {
+    showPhase('computing');
+    document.getElementById('computing-text')!.textContent = t(UI.computing, locale);
+
+    setTimeout(() => {
+      const scores = computeScores(QUESTIONS, answers);
+      const matchedType = matchType(scores);
+      const flavor = getSoulFlavor(scores);
+      const vec = scoresToVector(scores);
+
+      const takenAt = new Date().toISOString();
+      const quizVersion = '0.1';
+
+      saveProfile({
+        quizVersion,
+        type: matchedType.id,
+        scores: vec,
+        soulFlavor: flavor.id,
+        takenAt,
+        locale,
+      });
+
+      appendAttempt({
+        quizVersion,
+        type: matchedType.id,
+        soulFlavor: flavor.id,
+        scores: vec,
+        answers: { ...answers },
+        locale,
+        takenAt,
+      });
+
+      const params = new URLSearchParams({
+        type: matchedType.id,
+        flavor: flavor.id,
+        locale,
+      });
+      window.location.href = `/quiz/result/?${params.toString()}`;
+    }, 1200);
+  }
+
+  // --- Init ---
+  $startBtn.addEventListener('click', () => {
+    showPhase('questions');
+    renderQuestion();
+  });
+  $langToggle.addEventListener('click', toggleLocale);
+  $langToggleQ.addEventListener('click', toggleLocale);
+  updateLandingText();
+</script>
+
+<style>
+  .quiz-container {
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .quiz-container > [hidden] {
+    display: none !important;
+  }
+
+  /* ---------- Landing ---------- */
+  .quiz-landing {
+    text-align: center;
+    padding: 3rem 0 4rem;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+
+  .quiz-landing h1 {
+    margin: 0.5rem 0 0.75rem;
+  }
+
+  .quiz-meta {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+  }
+
+  /* ---------- Buttons ---------- */
+  .quiz-btn {
+    font: inherit;
+    cursor: pointer;
+    border: none;
+    border-radius: 999px;
+    padding: 0.75rem 2rem;
+    font-weight: 700;
+    transition: all 0.15s ease;
+  }
+
+  .quiz-btn.primary {
+    background: var(--accent);
+    color: var(--background);
+    font-size: 1.05rem;
+  }
+
+  .quiz-btn.primary:hover {
+    filter: brightness(1.12);
+  }
+
+  .quiz-btn.ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .quiz-btn.ghost:hover {
+    color: var(--text);
+    border-color: var(--text);
+  }
+
+  .lang-toggle {
+    margin-left: 0.5rem;
+  }
+
+  .quiz-landing .lang-toggle {
+    display: block;
+    margin: 1rem auto 0;
+  }
+
+  /* ---------- Questions ---------- */
+  .quiz-questions {
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 1rem 0 3rem;
+  }
+
+  .quiz-topbar {
+    margin-bottom: 2rem;
+  }
+
+  .progress-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  .progress-bar-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+
+  .question-card {
+    animation: fadeIn 0.25s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .question-text {
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-bottom: 1.5rem;
+    color: var(--text);
+  }
+
+  .options-container {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .option-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    font-size: 1rem;
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    line-height: 1.45;
+  }
+
+  .option-btn:hover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .option-btn.selected {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    font-weight: 600;
+  }
+
+  .option-btn.binary {
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.05rem;
+  }
+
+  /* ---------- Computing ---------- */
+  .quiz-computing {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .computing-inner {
+    text-align: center;
+    padding: 4rem 0;
+  }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    margin: 0 auto 1.5rem;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .computing-text {
+    color: var(--muted);
+    font-size: 1.1rem;
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 560px) {
+    .quiz-landing h1 {
+      font-size: 2rem;
+    }
+    .question-text {
+      font-size: 1.1rem;
+    }
+  }
+</style>

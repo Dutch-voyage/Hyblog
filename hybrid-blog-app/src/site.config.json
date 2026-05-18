@@ -1,0 +1,35 @@
+{
+  "title": "Hybrid Blog",
+  "description": "一个从个人博客出发、逐步承载多媒介内容和 agent 共创的实验性博客。",
+  "author": "owner",
+  "language": "zh-CN",
+  "homeEyebrow": "Personal publishing lab",
+  "homeHeadline": "一个最小但可扩展的混合博客。",
+  "homeIntro": "这里先从文章、短笔记和 demo 开始，保留之后扩展到 MDX 交互内容、notebook、语音和 agent 草稿工作流的空间。",
+  "nav": [
+    {
+      "label": "标签",
+      "href": "/tags/"
+    },
+    {
+      "label": "作者",
+      "href": "/authors/"
+    },
+    {
+      "label": "搜索",
+      "href": "/search/"
+    },
+    {
+      "label": "编辑",
+      "href": "/editor/"
+    },
+    {
+      "label": "测试人格",
+      "href": "/quiz/"
+    },
+    {
+      "label": "账户",
+      "href": "/account/"
+    }
+  ]
+}

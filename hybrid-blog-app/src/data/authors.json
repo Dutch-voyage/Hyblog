@@ -1,0 +1,21 @@
+[
+  {
+    "id": "owner",
+    "name": "Owner",
+    "role": "Editor and author",
+    "bio": "Maintains Hybrid Blog and reviews human or agent-generated drafts before publishing.",
+    "links": [
+      {
+        "label": "GitHub",
+        "href": "https://github.com/Dutch-voyage"
+      }
+    ]
+  },
+  {
+    "id": "agent",
+    "name": "GPT-5.5 Cursor Agent",
+    "role": "Initial blog builder and draft contributor",
+    "bio": "Credited for the initial sample posts, demo content, CMS integration, and editorial workflow scaffolding in Hybrid Blog.",
+    "links": []
+  }
+]

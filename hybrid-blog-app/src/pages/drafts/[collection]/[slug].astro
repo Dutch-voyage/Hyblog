@@ -1,0 +1,71 @@
+---
+import { render } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { getDraftEntries, getEntryEditHref, getEntrySourcePath, type BlogEntry } from "@/lib/content";
+
+export async function getStaticPaths() {
+  if (import.meta.env.ENABLE_DRAFT_PREVIEWS !== "true") {
+    return [];
+  }
+
+  const drafts = await getDraftEntries();
+  return drafts.map((entry) => ({
+    params: { collection: entry.collection, slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props as { entry: BlogEntry };
+const { Content } = await render(entry);
+const formattedDate = new Intl.DateTimeFormat("zh-CN", {
+  dateStyle: "long",
+}).format(entry.data.pubDate);
+---
+
+<BaseLayout title={`草稿预览：${entry.data.title}`} description={entry.data.description}>
+  <article class="article">
+    <aside class="draft-banner">
+      <strong>Draft preview</strong>
+      <p>
+        这是草稿预览页，仅在 <code>ENABLE_DRAFT_PREVIEWS=true</code> 构建时生成。不要把包含草稿预览的构建产物发布到公开站点。
+      </p>
+      <p class="meta">源文件：<code>{getEntrySourcePath(entry)}</code></p>
+      <p>
+        <a class="edit-link" href={getEntryEditHref(entry)}>编辑此草稿</a>
+      </p>
+    </aside>
+
+    <p class="meta">{formattedDate}</p>
+    <h1>{entry.data.title}</h1>
+    <p class="lede">{entry.data.description}</p>
+    <ul class="tag-list" aria-label="Tags">
+      {entry.data.tags.map((tag) => <li>{tag}</li>)}
+    </ul>
+    <Content />
+  </article>
+</BaseLayout>
+
+<style>
+  .draft-banner {
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--accent-soft);
+    margin-bottom: 2rem;
+    padding: 1rem;
+  }
+
+  .draft-banner p {
+    margin-bottom: 0;
+  }
+
+  .edit-link {
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--background);
+    display: inline-flex;
+    font-weight: 800;
+    margin-top: 0.75rem;
+    padding: 0.45rem 0.85rem;
+    text-decoration: none;
+  }
+</style>
