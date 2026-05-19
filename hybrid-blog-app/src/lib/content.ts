@@ -31,7 +31,7 @@ export function getDraftPreviewHref(entry: BlogEntry) {
 
 export function getEntrySourcePath(entry: BlogEntry) {
   const extension = entry.collection === "demos" ? "mdx" : "md";
-  return `src/content/${collectionPaths[entry.collection]}/${entry.id}.${extension}`;
+  return `hybrid-blog-app/src/content/${collectionPaths[entry.collection]}/${entry.id}.${extension}`;
 }
 
 export function sortByNewest(entries: BlogEntry[]) {

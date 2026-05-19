@@ -4,6 +4,8 @@ import ContentCard from "@/components/ContentCard.astro";
 import { authorProfiles, type AuthorProfile } from "@/lib/authors";
 import { getEntryHref, getPublishedEntries, type PublishedEntry } from "@/lib/content";
 
+export const prerender = true;
+
 export async function getStaticPaths() {
   const entries = await getPublishedEntries();
 

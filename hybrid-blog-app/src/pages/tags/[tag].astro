@@ -9,6 +9,8 @@ import {
   type PublishedEntry,
 } from "@/lib/content";
 
+export const prerender = true;
+
 export async function getStaticPaths() {
   const entries = await getPublishedEntries();
   return getAllTags(entries).map((tag) => ({

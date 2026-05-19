@@ -58,6 +58,8 @@ function entryToMarkdown(entry: typeof entries[number]) {
 
 const editableEntries = entries.map((entry) => ({
   id: `${entry.collection}:${entry.id}`,
+  collection: entry.collection,
+  slug: entry.id,
   title: entry.data.title,
   sourcePath: getEntrySourcePath(entry),
   markdown: entryToMarkdown(entry),
@@ -69,8 +71,24 @@ const editableEntries = entries.map((entry) => ({
     <p class="eyebrow">Editor</p>
     <h1>编辑工作台</h1>
     <p class="lede">
-      直接访问这里时只用于新建内容；已有页面会在页面自身提供编辑入口，跳转到对应的编辑模式。真正写入仍通过 Git 或 Pages CMS 完成。
+      内置 Markdown 编辑器会把修改提交成 GitHub Pull Request。合并 PR 后，站点才会发布对应内容。
     </p>
+  </section>
+
+  <section id="auth-panel" class="editor-panel auth-panel" aria-live="polite">
+    <div>
+      <p class="eyebrow">GitHub</p>
+      <h2>编辑权限</h2>
+      <p id="auth-status">正在检查 GitHub 登录状态...</p>
+    </div>
+    <div class="editor-actions auth-actions">
+      <a id="github-login-link" class="button-link" href="/api/auth/github/login?returnTo=/editor/" hidden>
+        使用 GitHub 登录
+      </a>
+      <a id="github-logout-link" class="button-link" href="/api/auth/github/logout?returnTo=/editor/" hidden>
+        退出登录
+      </a>
+    </div>
   </section>
 
   <section
@@ -83,8 +101,7 @@ const editableEntries = entries.map((entry) => ({
     <p class="eyebrow">Edit Mode</p>
     <h2 id="existing-edit-title">编辑已有内容</h2>
     <p>
-      这个模式只在从内容页面点击“编辑此页”后进入。当前页面是静态页面，不会直接写回文件；
-      修改后请复制内容并覆盖对应源文件，或下载后通过 Git/Pages CMS 提交。
+      从内容页面点击“编辑此页”后进入这里。保存草稿或发布都会创建/更新 GitHub PR，不会直接写入 main。
     </p>
     <p>
       当前正在编辑：<strong id="existing-entry-title">未选择内容</strong>
@@ -97,6 +114,8 @@ const editableEntries = entries.map((entry) => ({
       没有找到这个内容条目。请回到内容页重新点击“编辑此页”，或直接新建内容。
     </div>
 
+    <div id="existing-conflict-message" class="editor-notice danger" hidden></div>
+
     <div class="markdown-tabs" role="tablist" aria-label="Markdown editor modes">
       <button id="markdown-edit-tab" class="tab-button active" type="button" role="tab" aria-selected="true">
         编辑
@@ -107,7 +126,7 @@ const editableEntries = entries.map((entry) => ({
     </div>
 
     <div id="markdown-edit-pane" class="markdown-pane active" role="tabpanel" aria-labelledby="markdown-edit-tab">
-      <textarea id="existing-markdown-editor" rows="22" spellcheck="false"></textarea>
+      <textarea id="existing-markdown-editor" rows="22" spellcheck="false" disabled></textarea>
     </div>
 
     <div
@@ -122,11 +141,13 @@ const editableEntries = entries.map((entry) => ({
     </div>
 
     <div class="editor-actions">
-      <button id="publish-existing-markdown" type="button">准备发布稿</button>
-      <button id="copy-existing-markdown" type="button">复制 Markdown</button>
-      <button id="download-existing-markdown" type="button">下载文件</button>
+      <button id="save-existing-draft-pr" type="button" disabled>保存草稿 PR</button>
+      <button id="publish-existing-pr" type="button" disabled>发布 PR</button>
       <a href="https://app.pagescms.org/" target="_blank" rel="noreferrer">打开 Pages CMS</a>
       <a href="/editor/">新建内容</a>
+      <a id="existing-pr-link" class="button-link subtle" href="#" target="_blank" rel="noreferrer" hidden>
+        查看 PR
+      </a>
       <span id="markdown-action-status" class="meta" aria-live="polite"></span>
     </div>
   </section>
@@ -134,7 +155,7 @@ const editableEntries = entries.map((entry) => ({
   <section id="create-section" aria-labelledby="composer-title" class="editor-panel create-panel">
     <h2 id="composer-title">新建内容</h2>
     <p>
-      这里只负责从空白表单生成新的 Markdown/MDX 草稿。它和已有内容编辑模式相互独立。
+      先用表单生成 frontmatter 和 Markdown，再直接编辑生成结果。保存草稿或发布都会提交成 GitHub PR。
     </p>
 
     <form id="composer-form" class="composer-grid">
@@ -156,6 +177,10 @@ const editableEntries = entries.map((entry) => ({
       <label>
         标题
         <input id="title-field" type="text" placeholder="内容标题" />
+      </label>
+      <label>
+        Slug
+        <input id="slug-field" type="text" placeholder="content-slug" />
       </label>
       <label>
         日期
@@ -188,22 +213,26 @@ const editableEntries = entries.map((entry) => ({
     </form>
 
     <label class="wide output-label">
-      生成结果
-      <textarea id="draft-output" rows="16" readonly></textarea>
+      Markdown
+      <textarea id="draft-output" rows="16" spellcheck="false" disabled></textarea>
     </label>
+
+    <div id="draft-conflict-message" class="editor-notice danger" hidden></div>
 
     <div class="editor-actions">
       <button id="preview-draft-output" type="button">预览</button>
-      <button id="publish-draft-output" type="button">准备发布稿</button>
-      <button id="copy-draft-output" type="button">复制 Markdown</button>
-      <button id="download-draft-output" type="button">下载文件</button>
+      <button id="save-draft-pr" type="button" disabled>保存草稿 PR</button>
+      <button id="publish-draft-pr" type="button" disabled>发布 PR</button>
       <a href="https://app.pagescms.org/" target="_blank" rel="noreferrer">打开 Pages CMS</a>
+      <a id="draft-pr-link" class="button-link subtle" href="#" target="_blank" rel="noreferrer" hidden>
+        查看 PR
+      </a>
       <span id="draft-action-status" class="meta" aria-live="polite"></span>
     </div>
 
     <div id="draft-preview-panel" class="draft-preview-panel" hidden>
       <h3>当前预览</h3>
-      <p class="meta">预览会渲染正文 Markdown，frontmatter 不参与渲染。当前发布路线是把生成结果提交到 Pages CMS 或 Git。</p>
+      <p class="meta">预览会渲染正文 Markdown，frontmatter 不参与渲染。发布动作只会创建 PR。</p>
       <div id="draft-preview-output" class="preview-surface"></div>
     </div>
   </section>
@@ -216,6 +245,7 @@ const editableEntries = entries.map((entry) => ({
   const collectionField = document.getElementById("collection-field") as HTMLSelectElement | null;
   const statusField = document.getElementById("status-field") as HTMLSelectElement | null;
   const titleField = document.getElementById("title-field") as HTMLInputElement | null;
+  const slugField = document.getElementById("slug-field") as HTMLInputElement | null;
   const dateField = document.getElementById("date-field") as HTMLInputElement | null;
   const descriptionField = document.getElementById("description-field") as HTMLTextAreaElement | null;
   const authorsField = document.getElementById("authors-field") as HTMLInputElement | null;
@@ -225,16 +255,18 @@ const editableEntries = entries.map((entry) => ({
   const bodyField = document.getElementById("body-field") as HTMLTextAreaElement | null;
   const output = document.getElementById("draft-output") as HTMLTextAreaElement | null;
   const previewDraftOutput = document.getElementById("preview-draft-output") as HTMLButtonElement | null;
-  const publishDraftOutput = document.getElementById("publish-draft-output") as HTMLButtonElement | null;
-  const copyDraftOutput = document.getElementById("copy-draft-output") as HTMLButtonElement | null;
-  const downloadDraftOutput = document.getElementById("download-draft-output") as HTMLButtonElement | null;
+  const saveDraftPr = document.getElementById("save-draft-pr") as HTMLButtonElement | null;
+  const publishDraftPr = document.getElementById("publish-draft-pr") as HTMLButtonElement | null;
   const draftPreviewPanel = document.getElementById("draft-preview-panel") as HTMLElement | null;
   const draftPreviewOutput = document.getElementById("draft-preview-output");
   const draftActionStatus = document.getElementById("draft-action-status");
+  const draftConflictMessage = document.getElementById("draft-conflict-message") as HTMLElement | null;
+  const draftPrLink = document.getElementById("draft-pr-link") as HTMLAnchorElement | null;
   const createSection = document.getElementById("create-section") as HTMLElement | null;
   const existingEditSection = document.getElementById("existing-edit-section") as HTMLElement | null;
   const editableRoot = existingEditSection;
   const missingEntryMessage = document.getElementById("missing-entry-message") as HTMLElement | null;
+  const existingConflictMessage = document.getElementById("existing-conflict-message") as HTMLElement | null;
   const existingEntryTitle = document.getElementById("existing-entry-title");
   const existingEntrySource = document.getElementById("existing-entry-source");
   const existingMarkdownEditor = document.getElementById("existing-markdown-editor") as HTMLTextAreaElement | null;
@@ -243,20 +275,57 @@ const editableEntries = entries.map((entry) => ({
   const markdownEditPane = document.getElementById("markdown-edit-pane") as HTMLElement | null;
   const markdownPreviewPane = document.getElementById("markdown-preview-pane") as HTMLElement | null;
   const markdownPreviewOutput = document.getElementById("markdown-preview-output");
-  const publishExistingMarkdown = document.getElementById("publish-existing-markdown") as HTMLButtonElement | null;
-  const copyExistingMarkdown = document.getElementById("copy-existing-markdown") as HTMLButtonElement | null;
-  const downloadExistingMarkdown = document.getElementById("download-existing-markdown") as HTMLButtonElement | null;
+  const saveExistingDraftPr = document.getElementById("save-existing-draft-pr") as HTMLButtonElement | null;
+  const publishExistingPr = document.getElementById("publish-existing-pr") as HTMLButtonElement | null;
   const markdownActionStatus = document.getElementById("markdown-action-status");
+  const existingPrLink = document.getElementById("existing-pr-link") as HTMLAnchorElement | null;
+  const authStatus = document.getElementById("auth-status");
+  const githubLoginLink = document.getElementById("github-login-link") as HTMLAnchorElement | null;
+  const githubLogoutLink = document.getElementById("github-logout-link") as HTMLAnchorElement | null;
+
   const editableEntries = JSON.parse(editableRoot?.dataset.editableEntries ?? "[]") as Array<{
     id: string;
+    collection: "posts" | "notes" | "demos";
+    slug: string;
     title: string;
     sourcePath: string;
     markdown: string;
   }>;
+
+  type EditorSession = {
+    authenticated: boolean;
+    csrfToken?: string;
+    loginUrl?: string;
+    logoutUrl?: string;
+    user?: { login: string };
+    repository?: { owner: string; repo: string; canPush?: boolean; visible?: boolean };
+    configured?: boolean;
+    missingEnv?: string[];
+    error?: string;
+  };
+
+  type ContentResponse = {
+    collection: "posts" | "notes" | "demos";
+    slug: string;
+    path: string;
+    sha: string;
+    markdown: string;
+  };
+
   let currentEditableEntryId = "";
+  let currentExistingCollection: "posts" | "notes" | "demos" | null = null;
+  let currentExistingSlug = "";
+  let currentExistingBaseSha: string | null = null;
+  let sessionState: EditorSession | null = null;
+  let slugTouched = false;
 
   const today = new Date().toISOString().slice(0, 10);
   if (dateField) dateField.value = today;
+
+  marked.setOptions({
+    gfm: true,
+    breaks: false,
+  });
 
   function listFromInput(value: string) {
     return value
@@ -269,11 +338,104 @@ const editableEntries = entries.map((entry) => ({
     return items.length > 0 ? items.map((item) => `  - "${item}"`).join("\n") : "  - \"\"";
   }
 
+  function slugify(value: string) {
+    return (
+      value
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "untitled"
+    );
+  }
+
+  function setButtonsEnabled(enabled: boolean) {
+    saveExistingDraftPr?.toggleAttribute("disabled", !enabled);
+    publishExistingPr?.toggleAttribute("disabled", !enabled);
+    saveDraftPr?.toggleAttribute("disabled", !enabled);
+    publishDraftPr?.toggleAttribute("disabled", !enabled);
+    existingMarkdownEditor?.toggleAttribute("disabled", !enabled);
+    output?.toggleAttribute("disabled", !enabled);
+  }
+
+  function setNotice(target: Element | null, message: string, isError = false) {
+    if (!target) return;
+    target.textContent = message;
+    target.classList.toggle("danger-text", isError);
+  }
+
+  function setConflict(target: HTMLElement | null, message = "") {
+    if (!target) return;
+    target.textContent = message;
+    target.hidden = !message;
+  }
+
+  function setPrLink(target: HTMLAnchorElement | null, url?: string) {
+    if (!target) return;
+    if (!url) {
+      target.hidden = true;
+      target.href = "#";
+      return;
+    }
+    target.href = url;
+    target.hidden = false;
+  }
+
+  function updateAuthUi(session: EditorSession) {
+    const returnTo = `${window.location.pathname}${window.location.search}`;
+    if (githubLoginLink && session.loginUrl) {
+      githubLoginLink.href = `/api/auth/github/login?returnTo=${encodeURIComponent(returnTo)}`;
+    }
+    if (githubLogoutLink && session.logoutUrl) {
+      githubLogoutLink.href = `/api/auth/github/logout?returnTo=${encodeURIComponent(returnTo)}`;
+    }
+
+    githubLoginLink?.toggleAttribute("hidden", session.authenticated);
+    githubLogoutLink?.toggleAttribute("hidden", !session.authenticated);
+
+    if (session.configured === false) {
+      setButtonsEnabled(false);
+      githubLoginLink?.toggleAttribute("hidden", true);
+      const missing = session.missingEnv?.join(", ") || "GitHub OAuth environment variables";
+      setNotice(authStatus, `GitHub 编辑功能还没有配置。缺少：${missing}`, true);
+      return;
+    }
+
+    if (!session.authenticated) {
+      setButtonsEnabled(false);
+      setNotice(authStatus, session.error ?? "请先使用 GitHub 登录，然后提交内容 PR。");
+      return;
+    }
+
+    setButtonsEnabled(true);
+    const repo = session.repository ? `${session.repository.owner}/${session.repository.repo}` : "GitHub repo";
+    const target = session.repository?.canPush ? "源仓库分支" : "你的 fork";
+    setNotice(authStatus, `已以 @${session.user?.login} 登录。提交会写入 ${target}，并向 ${repo} 创建 Pull Request。`);
+  }
+
+  async function loadSession() {
+    try {
+      const response = await fetch("/api/editor/session");
+      const data = (await response.json()) as EditorSession;
+      sessionState = data;
+      updateAuthUi(data);
+      return data;
+    } catch {
+      const fallback = {
+        authenticated: false,
+        error: "无法读取编辑会话。请确认本地服务运行在 Astro Node 模式。",
+      };
+      sessionState = fallback;
+      updateAuthUi(fallback);
+      return fallback;
+    }
+  }
+
   function updateDraft() {
     if (!output) return;
 
     const collection = collectionField?.value ?? "posts";
     const title = titleField?.value.trim() || "Untitled";
+    if (slugField && !slugTouched) slugField.value = slugify(title);
     const description = descriptionField?.value.trim() || "Draft description.";
     const pubDate = dateField?.value || today;
     const status = statusField?.value ?? "draft";
@@ -302,38 +464,6 @@ const editableEntries = entries.map((entry) => ({
     lines.push("formats:", renderYamlList(formats), "---", "", body);
     output.value = lines.join("\n");
     if (draftPreviewPanel && !draftPreviewPanel.hidden) updateDraftPreview();
-  }
-
-  document.getElementById("composer-form")?.addEventListener("input", updateDraft);
-  updateDraft();
-
-  marked.setOptions({
-    gfm: true,
-    breaks: false,
-  });
-
-  function getSelectedEditableEntry() {
-    return editableEntries.find((entry) => entry.id === currentEditableEntryId);
-  }
-
-  function updateExistingEditor() {
-    const entry = getSelectedEditableEntry();
-
-    if (!entry) {
-      if (missingEntryMessage) missingEntryMessage.hidden = false;
-      if (existingMarkdownEditor) existingMarkdownEditor.value = "";
-      if (existingEntryTitle) existingEntryTitle.textContent = "未找到内容";
-      if (existingEntrySource) existingEntrySource.textContent = "未找到内容";
-      return;
-    }
-
-    if (missingEntryMessage) missingEntryMessage.hidden = true;
-    if (existingEntryTitle) existingEntryTitle.textContent = entry.title;
-    if (existingEntrySource) existingEntrySource.textContent = entry.sourcePath;
-    if (existingMarkdownEditor) existingMarkdownEditor.value = entry.markdown;
-    if (markdownActionStatus) markdownActionStatus.textContent = "";
-
-    updateMarkdownPreview();
   }
 
   function stripFrontmatter(markdown: string) {
@@ -369,21 +499,12 @@ const editableEntries = entries.map((entry) => ({
     updateDraftPreview();
   }
 
-  function createDraftFileName() {
-    const collection = collectionField?.value ?? "posts";
-    const extension = collection === "demos" ? "mdx" : "md";
-    const title = titleField?.value.trim() || "untitled";
-    const slug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, "-")
-      .replace(/^-+|-+$/g, "") || "untitled";
-
-    return `${slug}.${extension}`;
+  function getSelectedEditableEntry() {
+    return editableEntries.find((entry) => entry.id === currentEditableEntryId);
   }
 
   function updateMarkdownPreview() {
     if (!existingMarkdownEditor || !markdownPreviewOutput) return;
-
     renderMarkdownPreview(existingMarkdownEditor.value, markdownPreviewOutput);
   }
 
@@ -401,6 +522,52 @@ const editableEntries = entries.map((entry) => ({
     if (isPreview) updateMarkdownPreview();
   }
 
+  async function fetchExistingFromGitHub(entry: ReturnType<typeof getSelectedEditableEntry>) {
+    if (!entry || !sessionState?.authenticated) return;
+    setNotice(markdownActionStatus, "正在从 GitHub 读取最新内容...");
+
+    const response = await fetch(`/api/editor/content/${entry.collection}/${encodeURIComponent(entry.slug)}`);
+    const data = (await response.json()) as ContentResponse | { error: string };
+
+    if (!response.ok) {
+      setNotice(markdownActionStatus, "error" in data ? data.error : "无法读取 GitHub 内容。", true);
+      return;
+    }
+
+    const content = data as ContentResponse;
+    currentExistingBaseSha = content.sha;
+    if (existingEntrySource) existingEntrySource.textContent = content.path;
+    if (existingMarkdownEditor) existingMarkdownEditor.value = content.markdown;
+    setNotice(markdownActionStatus, "已载入 GitHub 最新版本。");
+    updateMarkdownPreview();
+  }
+
+  async function updateExistingEditor() {
+    const entry = getSelectedEditableEntry();
+    currentExistingBaseSha = null;
+    setPrLink(existingPrLink);
+    setConflict(existingConflictMessage);
+
+    if (!entry) {
+      if (missingEntryMessage) missingEntryMessage.hidden = false;
+      if (existingMarkdownEditor) existingMarkdownEditor.value = "";
+      if (existingEntryTitle) existingEntryTitle.textContent = "未找到内容";
+      if (existingEntrySource) existingEntrySource.textContent = "未找到内容";
+      return;
+    }
+
+    currentExistingCollection = entry.collection;
+    currentExistingSlug = entry.slug;
+    if (missingEntryMessage) missingEntryMessage.hidden = true;
+    if (existingEntryTitle) existingEntryTitle.textContent = entry.title;
+    if (existingEntrySource) existingEntrySource.textContent = entry.sourcePath;
+    if (existingMarkdownEditor) existingMarkdownEditor.value = entry.markdown;
+    setNotice(markdownActionStatus, sessionState?.authenticated ? "" : "登录后会从 GitHub 读取最新文件并启用提交。");
+
+    updateMarkdownPreview();
+    await fetchExistingFromGitHub(entry);
+  }
+
   function initializeEditorMode() {
     const entryId = new URLSearchParams(window.location.search).get("entry");
 
@@ -413,76 +580,146 @@ const editableEntries = entries.map((entry) => ({
     currentEditableEntryId = entryId;
     if (createSection) createSection.hidden = true;
     if (existingEditSection) existingEditSection.hidden = false;
-    updateExistingEditor();
   }
+
+  async function submitProposal(input: {
+    collection: string;
+    slug?: string | null;
+    markdown: string;
+    baseSha?: string | null;
+    intent: "draft" | "publish";
+    statusTarget: Element | null;
+    conflictTarget: HTMLElement | null;
+    linkTarget: HTMLAnchorElement | null;
+  }) {
+    if (!sessionState?.authenticated || !sessionState.csrfToken) {
+      setNotice(input.statusTarget, "请先使用 GitHub 登录。", true);
+      return;
+    }
+
+    setConflict(input.conflictTarget);
+    setPrLink(input.linkTarget);
+    setButtonsEnabled(false);
+    setNotice(input.statusTarget, "正在提交到 GitHub...");
+
+    try {
+      const response = await fetch("/api/editor/proposals", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-csrf-token": sessionState.csrfToken,
+        },
+        body: JSON.stringify({
+          collection: input.collection,
+          slug: input.slug,
+          markdown: input.markdown,
+          baseSha: input.baseSha,
+          intent: input.intent,
+        }),
+      });
+      const data = (await response.json()) as { prUrl?: string; error?: string; path?: string };
+
+      if (!response.ok) {
+        const message = data.error ?? "GitHub 提交失败。";
+        if (response.status === 409 || response.status === 202) {
+          setConflict(input.conflictTarget, message);
+        }
+        setNotice(input.statusTarget, message, true);
+        return;
+      }
+
+      setPrLink(input.linkTarget, data.prUrl);
+      setNotice(input.statusTarget, `已创建/更新 PR：${data.path ?? ""}`);
+    } finally {
+      setButtonsEnabled(Boolean(sessionState?.authenticated));
+    }
+  }
+
+  document.getElementById("composer-form")?.addEventListener("input", updateDraft);
+  slugField?.addEventListener("input", () => {
+    slugTouched = true;
+  });
+  titleField?.addEventListener("input", () => {
+    if (!slugTouched && slugField) slugField.value = slugify(titleField.value);
+  });
+  output?.addEventListener("input", updateDraftPreview);
+  updateDraft();
 
   existingMarkdownEditor?.addEventListener("input", updateMarkdownPreview);
   markdownEditTab?.addEventListener("click", () => setMarkdownMode("edit"));
   markdownPreviewTab?.addEventListener("click", () => setMarkdownMode("preview"));
-  initializeEditorMode();
 
   previewDraftOutput?.addEventListener("click", () => {
     showDraftPreview();
-    if (draftActionStatus) draftActionStatus.textContent = "已更新预览";
+    setNotice(draftActionStatus, "已更新预览");
   });
 
-  publishDraftOutput?.addEventListener("click", () => {
+  saveDraftPr?.addEventListener("click", () => {
+    if (!output) return;
+    output.value = setMarkdownStatus(output.value, "draft");
+    if (statusField) statusField.value = "draft";
+    submitProposal({
+      collection: collectionField?.value ?? "posts",
+      slug: slugField?.value.trim() || null,
+      markdown: output.value,
+      intent: "draft",
+      statusTarget: draftActionStatus,
+      conflictTarget: draftConflictMessage,
+      linkTarget: draftPrLink,
+    });
+  });
+
+  publishDraftPr?.addEventListener("click", () => {
+    if (!output) return;
+    output.value = setMarkdownStatus(output.value, "published");
     if (statusField) statusField.value = "published";
-    updateDraft();
     showDraftPreview();
-    if (draftActionStatus) {
-      draftActionStatus.textContent = "已准备发布稿，请复制或下载后通过 Pages CMS/Git 提交。";
-    }
+    submitProposal({
+      collection: collectionField?.value ?? "posts",
+      slug: slugField?.value.trim() || null,
+      markdown: output.value,
+      intent: "publish",
+      statusTarget: draftActionStatus,
+      conflictTarget: draftConflictMessage,
+      linkTarget: draftPrLink,
+    });
   });
 
-  copyDraftOutput?.addEventListener("click", async () => {
-    if (!output || !draftActionStatus) return;
-
-    await navigator.clipboard.writeText(output.value);
-    draftActionStatus.textContent = "已复制";
+  saveExistingDraftPr?.addEventListener("click", () => {
+    if (!existingMarkdownEditor || !currentExistingCollection) return;
+    existingMarkdownEditor.value = setMarkdownStatus(existingMarkdownEditor.value, "draft");
+    updateMarkdownPreview();
+    submitProposal({
+      collection: currentExistingCollection,
+      slug: currentExistingSlug,
+      markdown: existingMarkdownEditor.value,
+      baseSha: currentExistingBaseSha,
+      intent: "draft",
+      statusTarget: markdownActionStatus,
+      conflictTarget: existingConflictMessage,
+      linkTarget: existingPrLink,
+    });
   });
 
-  downloadDraftOutput?.addEventListener("click", () => {
-    if (!output || !draftActionStatus) return;
-
-    const blob = new Blob([output.value], { type: "text/markdown;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = createDraftFileName();
-    link.click();
-    URL.revokeObjectURL(url);
-    draftActionStatus.textContent = "已下载";
-  });
-
-  publishExistingMarkdown?.addEventListener("click", () => {
-    if (!existingMarkdownEditor || !markdownActionStatus) return;
-
+  publishExistingPr?.addEventListener("click", () => {
+    if (!existingMarkdownEditor || !currentExistingCollection) return;
     existingMarkdownEditor.value = setMarkdownStatus(existingMarkdownEditor.value, "published");
     updateMarkdownPreview();
-    markdownActionStatus.textContent = "已准备发布稿，请复制或下载后通过 Pages CMS/Git 提交。";
+    submitProposal({
+      collection: currentExistingCollection,
+      slug: currentExistingSlug,
+      markdown: existingMarkdownEditor.value,
+      baseSha: currentExistingBaseSha,
+      intent: "publish",
+      statusTarget: markdownActionStatus,
+      conflictTarget: existingConflictMessage,
+      linkTarget: existingPrLink,
+    });
   });
 
-  copyExistingMarkdown?.addEventListener("click", async () => {
-    if (!existingMarkdownEditor || !markdownActionStatus) return;
-
-    await navigator.clipboard.writeText(existingMarkdownEditor.value);
-    markdownActionStatus.textContent = "已复制";
-  });
-
-  downloadExistingMarkdown?.addEventListener("click", () => {
-    const entry = getSelectedEditableEntry();
-
-    if (!entry || !existingMarkdownEditor || !markdownActionStatus) return;
-
-    const blob = new Blob([existingMarkdownEditor.value], { type: "text/markdown;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = entry.sourcePath.split("/").at(-1) ?? "content.md";
-    link.click();
-    URL.revokeObjectURL(url);
-    markdownActionStatus.textContent = "已下载";
+  initializeEditorMode();
+  loadSession().then(() => {
+    updateExistingEditor();
   });
 </script>
 
@@ -494,7 +731,19 @@ const editableEntries = entries.map((entry) => ({
     padding: 1.25rem;
   }
 
-  .create-panel {
+  .auth-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .auth-panel h2 {
+    margin-top: 0;
+  }
+
+  .create-panel,
+  .markdown-editor {
     margin-top: 1.5rem;
   }
 
@@ -528,6 +777,12 @@ const editableEntries = entries.map((entry) => ({
     font: inherit;
   }
 
+  textarea:disabled,
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
   .output-label {
     margin-top: 1rem;
   }
@@ -542,6 +797,15 @@ const editableEntries = entries.map((entry) => ({
     background: var(--accent-soft);
     margin: 1rem 0;
     padding: 0.75rem;
+  }
+
+  .editor-notice.danger {
+    border-color: #b91c1c;
+    background: color-mix(in srgb, #b91c1c, transparent 88%);
+  }
+
+  .danger-text {
+    color: #b91c1c;
   }
 
   .markdown-tabs {
@@ -626,18 +890,26 @@ const editableEntries = entries.map((entry) => ({
     margin-top: 0.75rem;
   }
 
-  button {
+  button,
+  .button-link {
     border: 1px solid var(--border);
     border-radius: 999px;
     background: var(--accent-soft);
     color: var(--text);
     cursor: pointer;
+    display: inline-flex;
     font: inherit;
     font-weight: 800;
     padding: 0.6rem 1rem;
+    text-decoration: none;
+  }
+
+  .button-link.subtle {
+    background: var(--background);
   }
 
   @media (max-width: 760px) {
+    .auth-panel,
     .editor-actions {
       align-items: flex-start;
       flex-direction: column;
