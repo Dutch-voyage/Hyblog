@@ -7,7 +7,7 @@ authors:
 tags:
   - "hyblog"
   - "essay"
-status: "draft"
+status: "published"
 formats:
   - "blog"
 ---
