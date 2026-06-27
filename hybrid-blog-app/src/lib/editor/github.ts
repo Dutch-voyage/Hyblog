@@ -61,6 +61,28 @@ function encodeRefPath(ref: string) {
   return encodeURI(ref);
 }
 
+function encodeBase64(value: string) {
+  const bytes = new TextEncoder().encode(value);
+  let binary = "";
+
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+
+  return btoa(binary);
+}
+
+function decodeBase64(value: string) {
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return new TextDecoder().decode(bytes);
+}
+
 async function parseResponse(response: Response) {
   const text = await response.text();
   if (!text) return null;
@@ -220,7 +242,7 @@ export function decodeGitHubContent(file: GitHubContentFile) {
     throw new GitHubApiError(400, "GitHub returned unsupported content encoding.");
   }
 
-  return Buffer.from(file.content.replace(/\s/g, ""), "base64").toString("utf8");
+  return decodeBase64(file.content.replace(/\s/g, ""));
 }
 
 export async function getBranchHeadSha(
@@ -294,7 +316,7 @@ export async function putContentFile(input: {
       method: "PUT",
       body: JSON.stringify({
         message: input.message,
-        content: Buffer.from(input.content, "utf8").toString("base64"),
+        content: encodeBase64(input.content),
         branch: input.branch,
         ...(input.sha ? { sha: input.sha } : {}),
       }),
