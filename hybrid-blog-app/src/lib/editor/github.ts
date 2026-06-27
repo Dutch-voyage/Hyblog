@@ -84,6 +84,7 @@ export async function githubJson<T>(
       accept: "application/vnd.github+json",
       authorization: `Bearer ${token}`,
       "content-type": "application/json",
+      "user-agent": "hybrid-blog-editor",
       "x-github-api-version": "2022-11-28",
       ...(init.headers ?? {}),
     },
@@ -112,6 +113,7 @@ export async function exchangeOAuthCode(input: {
     headers: {
       accept: "application/json",
       "content-type": "application/json",
+      "user-agent": "hybrid-blog-editor",
     },
     body: JSON.stringify({
       client_id: input.clientId,
