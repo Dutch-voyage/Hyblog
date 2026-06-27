@@ -51,16 +51,18 @@ The editor page is still static. It does not write files directly. Authors shoul
 Added:
 
 ```text
+src/pages/drafts/index.astro
 src/pages/drafts/[collection]/[slug].astro
 ```
 
-Draft preview pages are opt-in only.
+Draft preview content is guarded from normal public builds. Local development enables it automatically so developers can review drafts without setting extra environment variables.
 
 Default build behavior:
 
 1. Draft entries are not listed on public content pages.
 2. Draft entries are not listed in `/editor/`.
-3. `/drafts/` pages are not generated.
+3. `/drafts/` does not expose draft content.
+4. `/drafts/{collection}/{slug}/` pages are not generated.
 
 Preview build behavior:
 
@@ -71,8 +73,9 @@ ENABLE_DRAFT_PREVIEWS=true npm run build
 When enabled:
 
 1. Draft entries appear in `/editor/`.
-2. Draft preview routes are generated under `/drafts/{collection}/{slug}/`.
-3. Draft preview pages show a visible warning banner.
+2. `/drafts/` shows a searchable draft dashboard.
+3. Draft preview routes are generated under `/drafts/{collection}/{slug}/`.
+4. Draft preview pages show a visible warning banner.
 
 Do not publish a build generated with `ENABLE_DRAFT_PREVIEWS=true`.
 
@@ -140,8 +143,9 @@ npm run build
 Expected result:
 
 1. Build passes.
-2. Draft page is not generated.
+2. Draft detail pages are not generated.
 3. `/editor/` lists only published content.
+4. `/drafts/` does not expose draft content.
 
 Run draft preview build:
 
@@ -152,5 +156,6 @@ ENABLE_DRAFT_PREVIEWS=true npm run build
 Expected result:
 
 1. Build passes.
-2. `/drafts/notes/editor-draft-preview/` is generated.
-3. `/editor/` includes the draft preview entry.
+2. `/drafts/` lists draft entries with preview and edit links.
+3. `/drafts/notes/editor-draft-preview/` is generated.
+4. `/editor/` includes the draft preview entry.

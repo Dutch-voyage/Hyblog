@@ -1,12 +1,13 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import {
+  canPreviewDrafts,
   getAllEntries,
   getEntrySourcePath,
   getPublishedEntries,
 } from "@/lib/content";
 
-const draftPreviewsEnabled = import.meta.env.ENABLE_DRAFT_PREVIEWS === "true";
+const draftPreviewsEnabled = canPreviewDrafts();
 const entries = draftPreviewsEnabled ? await getAllEntries() : await getPublishedEntries();
 
 function yamlString(value: string) {
@@ -143,6 +144,7 @@ const editableEntries = entries.map((entry) => ({
     <div class="editor-actions">
       <button id="save-existing-draft-pr" type="button" disabled>保存草稿 PR</button>
       <button id="publish-existing-pr" type="button" disabled>发布 PR</button>
+      <a href="/drafts/">草稿总览</a>
       <a href="https://app.pagescms.org/" target="_blank" rel="noreferrer">打开 Pages CMS</a>
       <a href="/editor/">新建内容</a>
       <a id="existing-pr-link" class="button-link subtle" href="#" target="_blank" rel="noreferrer" hidden>
@@ -223,6 +225,7 @@ const editableEntries = entries.map((entry) => ({
       <button id="preview-draft-output" type="button">预览</button>
       <button id="save-draft-pr" type="button" disabled>保存草稿 PR</button>
       <button id="publish-draft-pr" type="button" disabled>发布 PR</button>
+      <a href="/drafts/">草稿总览</a>
       <a href="https://app.pagescms.org/" target="_blank" rel="noreferrer">打开 Pages CMS</a>
       <a id="draft-pr-link" class="button-link subtle" href="#" target="_blank" rel="noreferrer" hidden>
         查看 PR

@@ -1,0 +1,330 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import {
+  canPreviewDrafts,
+  getDraftEntries,
+  getDraftPreviewHref,
+  getEntryEditHref,
+  getEntrySourcePath,
+} from "@/lib/content";
+
+export const prerender = canPreviewDrafts();
+
+const draftPreviewsEnabled = canPreviewDrafts();
+const draftEntries = draftPreviewsEnabled ? await getDraftEntries() : [];
+
+const collectionLabels = {
+  posts: "文章",
+  notes: "笔记",
+  demos: "Demo",
+} as const;
+
+function formatDate(date: Date) {
+  return new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium" }).format(date);
+}
+
+function getExcerpt(body = "") {
+  const text = body
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/[#>*_`[\]()!-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!text) return "这个草稿还没有正文。";
+  return text.length > 220 ? `${text.slice(0, 217).trimEnd()}...` : text;
+}
+
+const drafts = draftEntries.map((entry) => {
+  const sourcePath = getEntrySourcePath(entry);
+  const body = entry.body ?? "";
+
+  return {
+    id: `${entry.collection}:${entry.id}`,
+    collection: entry.collection,
+    collectionLabel: collectionLabels[entry.collection],
+    title: entry.data.title,
+    description: entry.data.description,
+    pubDate: formatDate(entry.data.pubDate),
+    tags: entry.data.tags,
+    sourcePath,
+    previewHref: getDraftPreviewHref(entry),
+    editHref: getEntryEditHref(entry),
+    excerpt: getExcerpt(body),
+    searchText: [
+      entry.data.title,
+      entry.data.description,
+      entry.collection,
+      entry.id,
+      sourcePath,
+      ...entry.data.tags,
+      body,
+    ]
+      .join(" ")
+      .toLowerCase(),
+  };
+});
+---
+
+<BaseLayout title="草稿总览" description="开发者草稿预览与编辑入口。">
+  <section class="hero drafts-hero">
+    <p class="eyebrow">Draft Review</p>
+    <h1>草稿总览</h1>
+    <p class="lede">快速扫描未发布内容，并回到编辑器继续修改。</p>
+  </section>
+
+  {
+    !draftPreviewsEnabled ? (
+      <section class="drafts-disabled" aria-labelledby="drafts-disabled-title">
+        <h2 id="drafts-disabled-title">草稿预览未启用</h2>
+        <p>
+          本地开发会自动开启；构建环境需要设置 <code>ENABLE_DRAFT_PREVIEWS=true</code>。
+        </p>
+      </section>
+    ) : (
+      <>
+        <section class="draft-toolbar" aria-label="草稿筛选">
+          <label>
+            搜索
+            <input id="draft-search" type="search" placeholder="标题、标签、slug 或正文" />
+          </label>
+          <label>
+            类型
+            <select id="draft-collection-filter">
+              <option value="all">全部</option>
+              <option value="posts">文章</option>
+              <option value="notes">笔记</option>
+              <option value="demos">Demo</option>
+            </select>
+          </label>
+          <p id="draft-count" class="meta" aria-live="polite"></p>
+        </section>
+
+        {
+          drafts.length === 0 ? (
+            <section class="empty-drafts">
+              <h2>暂无草稿</h2>
+              <p>当前内容库没有 draft 状态的条目。</p>
+              <a class="button-link" href="/editor/">新建内容</a>
+            </section>
+          ) : (
+            <>
+              <ol id="draft-list" class="draft-list">
+                {drafts.map((draft) => (
+                  <li
+                    class="draft-card"
+                    data-draft-card
+                    data-collection={draft.collection}
+                    data-search-text={draft.searchText}
+                  >
+                    <article>
+                      <div class="draft-card-header">
+                        <div>
+                          <p class="meta">
+                            {draft.collectionLabel} / {draft.pubDate}
+                          </p>
+                          <h2>{draft.title}</h2>
+                        </div>
+                        <div class="draft-actions" aria-label={`${draft.title} actions`}>
+                          <a class="button-link subtle" href={draft.previewHref}>
+                            预览
+                          </a>
+                          <a class="button-link" href={draft.editHref}>
+                            编辑
+                          </a>
+                        </div>
+                      </div>
+
+                      <p class="description">{draft.description}</p>
+                      <p class="excerpt">{draft.excerpt}</p>
+                      <p class="source-path">
+                        <code>{draft.sourcePath}</code>
+                      </p>
+                      {draft.tags.length > 0 && (
+                        <ul class="tag-list" aria-label={`${draft.title} tags`}>
+                          {draft.tags.map((tag) => (
+                            <li>{tag}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </article>
+                  </li>
+                ))}
+              </ol>
+              <p id="empty-filter-message" class="empty-filter" hidden>
+                没有符合筛选条件的草稿。
+              </p>
+            </>
+          )
+        }
+      </>
+    )
+  }
+</BaseLayout>
+
+<script>
+  const searchInput = document.getElementById("draft-search") as HTMLInputElement | null;
+  const collectionFilter = document.getElementById("draft-collection-filter") as HTMLSelectElement | null;
+  const countLabel = document.getElementById("draft-count");
+  const emptyFilterMessage = document.getElementById("empty-filter-message") as HTMLElement | null;
+  const cards = Array.from(document.querySelectorAll<HTMLElement>("[data-draft-card]"));
+
+  function updateDraftList() {
+    const query = searchInput?.value.trim().toLowerCase() ?? "";
+    const collection = collectionFilter?.value ?? "all";
+    let visibleCount = 0;
+
+    for (const card of cards) {
+      const matchesQuery = !query || card.dataset.searchText?.includes(query);
+      const matchesCollection = collection === "all" || card.dataset.collection === collection;
+      const isVisible = Boolean(matchesQuery && matchesCollection);
+      card.hidden = !isVisible;
+      if (isVisible) visibleCount += 1;
+    }
+
+    if (countLabel) countLabel.textContent = `${visibleCount} / ${cards.length} 个草稿`;
+    if (emptyFilterMessage) emptyFilterMessage.hidden = visibleCount > 0;
+  }
+
+  searchInput?.addEventListener("input", updateDraftList);
+  collectionFilter?.addEventListener("change", updateDraftList);
+  updateDraftList();
+</script>
+
+<style>
+  .drafts-hero {
+    padding-bottom: 2rem;
+  }
+
+  .draft-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(150px, 190px) auto;
+    align-items: end;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+  }
+
+  label {
+    display: grid;
+    gap: 0.4rem;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  input,
+  select {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background: var(--surface);
+    color: var(--text);
+    padding: 0.75rem 0.85rem;
+    font: inherit;
+  }
+
+  .draft-list {
+    display: grid;
+    gap: 1rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .draft-card {
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--surface);
+    padding: 1.15rem;
+  }
+
+  .draft-card[hidden] {
+    display: none;
+  }
+
+  .draft-card-header {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .draft-card h2 {
+    margin: 0.25rem 0 0;
+    font-size: 1.35rem;
+    letter-spacing: 0;
+  }
+
+  .description {
+    margin-bottom: 0.4rem;
+  }
+
+  .excerpt {
+    color: var(--text);
+    margin: 0.6rem 0 0.9rem;
+  }
+
+  .source-path {
+    overflow-wrap: anywhere;
+  }
+
+  .draft-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
+  .button-link {
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--background);
+    display: inline-flex;
+    font-weight: 800;
+    line-height: 1.2;
+    padding: 0.55rem 0.85rem;
+    text-decoration: none;
+  }
+
+  .button-link:hover {
+    color: var(--background);
+  }
+
+  .button-link.subtle {
+    background: var(--accent-soft);
+    color: var(--text);
+  }
+
+  .button-link.subtle:hover {
+    color: var(--accent);
+  }
+
+  .empty-drafts,
+  .drafts-disabled,
+  .empty-filter {
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--surface);
+    padding: 1.25rem;
+  }
+
+  .empty-drafts h2,
+  .drafts-disabled h2 {
+    margin-top: 0;
+  }
+
+  @media (max-width: 720px) {
+    .draft-toolbar {
+      grid-template-columns: 1fr;
+    }
+
+    .draft-card-header {
+      flex-direction: column;
+    }
+
+    .draft-actions {
+      justify-content: flex-start;
+    }
+  }
+</style>

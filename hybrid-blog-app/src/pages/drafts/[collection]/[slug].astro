@@ -1,12 +1,18 @@
 ---
 import { render } from "astro:content";
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import { getDraftEntries, getEntryEditHref, getEntrySourcePath, type BlogEntry } from "@/lib/content";
+import {
+  canPreviewDrafts,
+  getDraftEntries,
+  getEntryEditHref,
+  getEntrySourcePath,
+  type BlogEntry,
+} from "@/lib/content";
 
 export const prerender = true;
 
 export async function getStaticPaths() {
-  if (import.meta.env.ENABLE_DRAFT_PREVIEWS !== "true") {
+  if (!canPreviewDrafts()) {
     return [];
   }
 
@@ -29,7 +35,7 @@ const formattedDate = new Intl.DateTimeFormat("zh-CN", {
     <aside class="draft-banner">
       <strong>Draft preview</strong>
       <p>
-        这是草稿预览页，仅在 <code>ENABLE_DRAFT_PREVIEWS=true</code> 构建时生成。不要把包含草稿预览的构建产物发布到公开站点。
+        这是草稿预览页，本地开发自动开启；构建环境仅在 <code>ENABLE_DRAFT_PREVIEWS=true</code> 时生成。
       </p>
       <p class="meta">源文件：<code>{getEntrySourcePath(entry)}</code></p>
       <p>

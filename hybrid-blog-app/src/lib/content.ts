@@ -29,6 +29,10 @@ export function getDraftPreviewHref(entry: BlogEntry) {
   return `/drafts/${collectionPaths[entry.collection]}/${entry.id}/`;
 }
 
+export function canPreviewDrafts() {
+  return import.meta.env.DEV || import.meta.env.ENABLE_DRAFT_PREVIEWS === "true";
+}
+
 export function getEntrySourcePath(entry: BlogEntry) {
   const extension = entry.collection === "demos" ? "mdx" : "md";
   return `hybrid-blog-app/src/content/${collectionPaths[entry.collection]}/${entry.id}.${extension}`;

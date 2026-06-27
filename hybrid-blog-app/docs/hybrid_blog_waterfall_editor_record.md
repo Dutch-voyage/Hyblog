@@ -97,6 +97,7 @@ Updated:
 ```text
 src/pages/editor/index.astro
 src/pages/content/[slug].astro
+src/pages/drafts/index.astro
 src/pages/drafts/[collection]/[slug].astro
 src/lib/content.ts
 ```
@@ -114,7 +115,7 @@ The new-content workspace exposes:
 4. Copy and download actions for the generated file.
 5. A Pages CMS entry link for the actual repository submission step.
 
-Existing content is no longer listed inside the editor workspace. Published content pages and draft preview pages expose their own edit links, then pass the selected entry id through the query string. In edit mode, `/editor/` reconstructs frontmatter and body content from Astro content collection data, then exposes:
+Existing content is no longer listed inside the editor workspace. Published content pages, the draft dashboard, and draft preview pages expose their own edit links, then pass the selected entry id through the query string. In edit mode, `/editor/` reconstructs frontmatter and body content from Astro content collection data, then exposes:
 
 1. Source file path.
 2. Editable Markdown/MDX textarea.
