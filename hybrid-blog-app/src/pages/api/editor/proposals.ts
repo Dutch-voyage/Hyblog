@@ -3,6 +3,8 @@ import { getEditorRepositoryConfig } from "@/lib/editor/config";
 import { EditorProposalError, createEditorProposal } from "@/lib/editor/proposals";
 import { readEditorSession, verifyToken } from "@/lib/editor/session";
 
+export const prerender = false;
+
 function json(data: unknown, init?: ResponseInit) {
   return new Response(JSON.stringify(data), {
     ...init,

@@ -8,6 +8,8 @@ import {
   setOAuthStateCookie,
 } from "@/lib/editor/session";
 
+export const prerender = false;
+
 export const GET: APIRoute = ({ cookies, redirect, url }) => {
   const environment = getEditorEnvironmentStatus();
   if (!environment.configured) {

@@ -11,6 +11,8 @@ import {
   verifyToken,
 } from "@/lib/editor/session";
 
+export const prerender = false;
+
 function decodeReturnTo(state: string) {
   const encoded = state.split(":")[1];
   if (!encoded) return "/editor/";

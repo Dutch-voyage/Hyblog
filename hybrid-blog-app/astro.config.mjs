@@ -5,7 +5,7 @@ import sitemap from "@astrojs/sitemap";
 
 export default defineConfig({
   site: "https://example.com",
-  output: "server",
+  output: "static",
   adapter: cloudflare(),
   integrations: [mdx(), sitemap()],
 });

@@ -8,6 +8,8 @@ import {
 import { decodeGitHubContent, getContentFileOrNull } from "@/lib/editor/github";
 import { readEditorSession } from "@/lib/editor/session";
 
+export const prerender = false;
+
 function json(data: unknown, init?: ResponseInit) {
   return new Response(JSON.stringify(data), {
     ...init,
