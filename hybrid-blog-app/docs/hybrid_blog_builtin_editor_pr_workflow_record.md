@@ -6,7 +6,7 @@ This document records the server-backed built-in Markdown editor work.
 
 Completed in this iteration:
 
-1. Converted the Astro app to Node server output with `@astrojs/node`.
+1. Converted the Astro app to server output for the editor API routes.
 2. Added GitHub OAuth sign-in for editor sessions.
 3. Added encrypted, HTTP-only editor session cookies.
 4. Added server-side content validation and path guards for `posts`, `notes`, and `demos`.
@@ -26,10 +26,19 @@ The app now builds with:
 
 ```ts
 output: "server"
-adapter: node({ mode: "standalone" })
+adapter: cloudflare()
 ```
 
-Existing dynamic content routes are explicitly prerendered so public pages still behave like static content pages while editor API routes run on the server.
+Existing dynamic content routes are explicitly prerendered so public pages still behave like static content pages while editor API routes run on the configured server runtime.
+
+Cloudflare deployment is configured from the repository root:
+
+```text
+package.json
+wrangler.toml
+```
+
+The root build script delegates to `hybrid-blog-app/`, and `wrangler.toml` points Cloudflare Pages at `hybrid-blog-app/dist`.
 
 ## Required Environment
 

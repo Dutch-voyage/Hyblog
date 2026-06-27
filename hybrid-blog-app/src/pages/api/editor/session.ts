@@ -32,7 +32,7 @@ export const GET: APIRoute = async ({ cookies, url }) => {
 
   let session = null;
   try {
-    session = readEditorSession(cookies);
+    session = await readEditorSession(cookies);
   } catch (error) {
     return json(
       {

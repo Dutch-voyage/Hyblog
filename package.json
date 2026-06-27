@@ -1,0 +1,12 @@
+{
+  "name": "hybrid-blog-deploy",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix hybrid-blog-app ci && npm --prefix hybrid-blog-app run build",
+    "dev": "npm --prefix hybrid-blog-app run dev",
+    "test": "npm --prefix hybrid-blog-app test"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}

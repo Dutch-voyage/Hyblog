@@ -11,8 +11,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^13.7.0",
     "@astrojs/mdx": "latest",
-    "@astrojs/node": "^10.1.1",
     "@astrojs/rss": "latest",
     "@astrojs/sitemap": "latest",
     "@bjorn3/browser_wasi_shim": "^0.4.2",

@@ -3,6 +3,7 @@ import { getEditorEnvironmentStatus, getEditorGitHubConfig } from "@/lib/editor/
 import { buildGitHubAuthorizeUrl } from "@/lib/editor/github";
 import {
   createOAuthState,
+  encodeBase64UrlText,
   sanitizeReturnTo,
   setOAuthStateCookie,
 } from "@/lib/editor/session";
@@ -23,7 +24,7 @@ export const GET: APIRoute = ({ cookies, redirect, url }) => {
 
   const config = getEditorGitHubConfig();
   const returnTo = sanitizeReturnTo(url.searchParams.get("returnTo"));
-  const state = `${createOAuthState()}:${Buffer.from(returnTo, "utf8").toString("base64url")}`;
+  const state = `${createOAuthState()}:${encodeBase64UrlText(returnTo)}`;
   const redirectUri = config.callbackUrl ?? new URL("/api/auth/github/callback", url).toString();
 
   setOAuthStateCookie(cookies, url, state);

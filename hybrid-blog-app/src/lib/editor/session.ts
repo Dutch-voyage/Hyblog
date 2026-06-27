@@ -1,5 +1,3 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes, timingSafeEqual } from "node:crypto";
-
 export const editorSessionCookie = "hyblog_editor_session";
 export const oauthStateCookie = "hyblog_oauth_state";
 
@@ -18,51 +16,91 @@ export interface CookieWriter {
   delete(name: string, options?: Record<string, unknown>): void;
 }
 
-function getSessionKey(secret: string) {
-  return createHash("sha256").update(secret).digest();
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+
+function getCrypto() {
+  if (!globalThis.crypto?.subtle) {
+    throw new Error("Web Crypto is not available in this runtime.");
+  }
+
+  return globalThis.crypto;
 }
 
-function encode(value: Buffer) {
-  return value.toString("base64url");
+function encode(value: Uint8Array) {
+  let binary = "";
+  for (const byte of value) {
+    binary += String.fromCharCode(byte);
+  }
+
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/u, "");
 }
 
 function decode(value: string) {
-  return Buffer.from(value, "base64url");
+  const normalized = value.replaceAll("-", "+").replaceAll("_", "/");
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return bytes;
+}
+
+export function encodeBase64UrlText(value: string) {
+  return encode(encoder.encode(value));
+}
+
+export function decodeBase64UrlText(value: string) {
+  return decoder.decode(decode(value));
+}
+
+async function getSessionKey(secret: string) {
+  const digest = await getCrypto().subtle.digest("SHA-256", encoder.encode(secret));
+  return getCrypto().subtle.importKey("raw", digest, "AES-GCM", false, ["encrypt", "decrypt"]);
+}
+
+function readRuntimeEnv(name: string) {
+  const processEnv = (globalThis as typeof globalThis & {
+    process?: { env?: Record<string, string | undefined> };
+  }).process?.env;
+
+  return import.meta.env[name] ?? processEnv?.[name];
 }
 
 export function getRequiredSessionSecret() {
-  const secret = import.meta.env.SESSION_SECRET ?? process.env.SESSION_SECRET;
+  const secret = readRuntimeEnv("SESSION_SECRET");
   if (!secret || secret.length < 32) {
     throw new Error("SESSION_SECRET must be set to at least 32 characters.");
   }
   return secret;
 }
 
-export function sealSession(session: EditorSession, secret: string) {
-  const iv = randomBytes(12);
-  const cipher = createCipheriv("aes-256-gcm", getSessionKey(secret), iv);
-  const ciphertext = Buffer.concat([
-    cipher.update(JSON.stringify({ version: 1, session }), "utf8"),
-    cipher.final(),
-  ]);
-  const tag = cipher.getAuthTag();
+export async function sealSession(session: EditorSession, secret: string) {
+  const iv = getCrypto().getRandomValues(new Uint8Array(12));
+  const ciphertext = await getCrypto().subtle.encrypt(
+    { name: "AES-GCM", iv },
+    await getSessionKey(secret),
+    encoder.encode(JSON.stringify({ version: 2, session })),
+  );
 
-  return [encode(iv), encode(tag), encode(ciphertext)].join(".");
+  return [encode(iv), encode(new Uint8Array(ciphertext))].join(".");
 }
 
-export function unsealSession(value: string, secret: string): EditorSession | null {
-  const [ivValue, tagValue, ciphertextValue] = value.split(".");
-  if (!ivValue || !tagValue || !ciphertextValue) return null;
+export async function unsealSession(value: string, secret: string): Promise<EditorSession | null> {
+  const [ivValue, ciphertextValue] = value.split(".");
+  if (!ivValue || !ciphertextValue) return null;
 
   try {
-    const decipher = createDecipheriv("aes-256-gcm", getSessionKey(secret), decode(ivValue));
-    decipher.setAuthTag(decode(tagValue));
-    const plaintext = Buffer.concat([
-      decipher.update(decode(ciphertextValue)),
-      decipher.final(),
-    ]).toString("utf8");
-    const parsed = JSON.parse(plaintext) as { version: 1; session: EditorSession };
-    if (parsed.version !== 1 || !parsed.session?.token || !parsed.session.login) return null;
+    const plaintext = await getCrypto().subtle.decrypt(
+      { name: "AES-GCM", iv: decode(ivValue) },
+      await getSessionKey(secret),
+      decode(ciphertextValue),
+    );
+    const parsed = JSON.parse(decoder.decode(plaintext)) as { version: 2; session: EditorSession };
+    if (parsed.version !== 2 || !parsed.session?.token || !parsed.session.login) return null;
     return parsed.session;
   } catch {
     return null;
@@ -70,17 +108,24 @@ export function unsealSession(value: string, secret: string): EditorSession | nu
 }
 
 export function createOAuthState() {
-  return encode(randomBytes(32));
+  return encode(getCrypto().getRandomValues(new Uint8Array(32)));
 }
 
 export function createCsrfToken() {
-  return encode(randomBytes(32));
+  return encode(getCrypto().getRandomValues(new Uint8Array(32)));
 }
 
 export function verifyToken(a: string, b: string) {
-  const left = Buffer.from(a);
-  const right = Buffer.from(b);
-  return left.length === right.length && timingSafeEqual(left, right);
+  const left = encoder.encode(a);
+  const right = encoder.encode(b);
+  if (left.length !== right.length) return false;
+
+  let diff = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    diff |= left[index] ^ right[index];
+  }
+
+  return diff === 0;
 }
 
 export function getCookieOptions(url: URL, maxAge?: number) {
@@ -93,12 +138,12 @@ export function getCookieOptions(url: URL, maxAge?: number) {
   } as const;
 }
 
-export function setEditorSessionCookie(cookies: CookieWriter, url: URL, session: EditorSession) {
-  const sealed = sealSession(session, getRequiredSessionSecret());
+export async function setEditorSessionCookie(cookies: CookieWriter, url: URL, session: EditorSession) {
+  const sealed = await sealSession(session, getRequiredSessionSecret());
   cookies.set(editorSessionCookie, sealed, getCookieOptions(url, 60 * 60 * 24 * 7));
 }
 
-export function readEditorSession(cookies: CookieWriter) {
+export async function readEditorSession(cookies: CookieWriter) {
   const value = cookies.get(editorSessionCookie)?.value;
   if (!value) return null;
   return unsealSession(value, getRequiredSessionSecret());
@@ -124,4 +169,3 @@ export function sanitizeReturnTo(value: string | null) {
   if (!value || !value.startsWith("/") || value.startsWith("//")) return "/editor/";
   return value;
 }
-

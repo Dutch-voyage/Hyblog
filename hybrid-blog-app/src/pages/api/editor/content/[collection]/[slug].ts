@@ -19,7 +19,7 @@ function json(data: unknown, init?: ResponseInit) {
 }
 
 export const GET: APIRoute = async ({ cookies, params }) => {
-  const session = readEditorSession(cookies);
+  const session = await readEditorSession(cookies);
   if (!session) {
     return json({ error: "Sign in with GitHub before loading editable content." }, { status: 401 });
   }
@@ -62,4 +62,3 @@ export const GET: APIRoute = async ({ cookies, params }) => {
     markdown: decodeGitHubContent(file),
   });
 };
-

@@ -4,6 +4,7 @@ import { exchangeOAuthCode, getAuthenticatedUser } from "@/lib/editor/github";
 import {
   clearOAuthStateCookie,
   createCsrfToken,
+  decodeBase64UrlText,
   readOAuthStateCookie,
   sanitizeReturnTo,
   setEditorSessionCookie,
@@ -15,7 +16,7 @@ function decodeReturnTo(state: string) {
   if (!encoded) return "/editor/";
 
   try {
-    return sanitizeReturnTo(Buffer.from(encoded, "base64url").toString("utf8"));
+    return sanitizeReturnTo(decodeBase64UrlText(encoded));
   } catch {
     return "/editor/";
   }
@@ -39,7 +40,7 @@ export const GET: APIRoute = async ({ cookies, redirect, url }) => {
   });
   const user = await getAuthenticatedUser(token);
 
-  setEditorSessionCookie(cookies, url, {
+  await setEditorSessionCookie(cookies, url, {
     token,
     login: user.login,
     userId: user.id,
@@ -50,4 +51,3 @@ export const GET: APIRoute = async ({ cookies, redirect, url }) => {
 
   return redirect(decodeReturnTo(state), 302);
 };
-

@@ -14,7 +14,7 @@ function json(data: unknown, init?: ResponseInit) {
 }
 
 export const POST: APIRoute = async ({ cookies, request }) => {
-  const session = readEditorSession(cookies);
+  const session = await readEditorSession(cookies);
   if (!session) {
     return json({ error: "Sign in with GitHub before submitting content." }, { status: 401 });
   }
@@ -67,4 +67,3 @@ export const POST: APIRoute = async ({ cookies, request }) => {
     return json({ error: "Failed to create editor proposal." }, { status: 500 });
   }
 };
-
