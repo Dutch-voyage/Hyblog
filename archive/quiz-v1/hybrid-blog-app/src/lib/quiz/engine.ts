@@ -1,3 +1,4 @@
+// Archived from the active Astro app on 2026-09-03.
 import { DIMENSION_IDS, CORE_DIMENSION_COUNT, type DimensionId } from './dimensions';
 import { PERSONALITY_TYPES, SOUL_FLAVORS, type PersonalityType, type SoulFlavor } from './types';
 import type { QuizQuestion } from './questions';

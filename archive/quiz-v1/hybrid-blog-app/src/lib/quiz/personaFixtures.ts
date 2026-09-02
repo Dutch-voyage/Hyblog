@@ -1,3 +1,4 @@
+// Archived from the active Astro app on 2026-09-03.
 import { CORE_DIMENSION_COUNT } from './dimensions';
 import { computeScores, getSoulFlavor, matchType, scoresToVector } from './engine';
 import { QUESTIONS } from './questions';

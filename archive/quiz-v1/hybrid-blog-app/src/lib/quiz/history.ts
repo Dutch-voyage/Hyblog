@@ -1,3 +1,4 @@
+// Archived from the active Astro app on 2026-09-03.
 import { getCurrentUser } from '../auth';
 
 const ANON_KEY = 'hybrid-blog-quiz-history';

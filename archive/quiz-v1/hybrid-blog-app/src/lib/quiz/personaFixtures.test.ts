@@ -1,3 +1,4 @@
+// Archived from the active Astro app on 2026-09-03.
 import { describe, expect, it } from 'vitest';
 import { QUESTIONS } from './questions';
 import { PUBLIC_PERSONA_FIXTURES, evaluatePersona } from './personaFixtures';

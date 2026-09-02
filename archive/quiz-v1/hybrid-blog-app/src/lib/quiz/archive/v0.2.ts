@@ -1,3 +1,4 @@
+// Archived from the active Astro app on 2026-09-03.
 // Archive v0.2
 import type { BiText, DimensionId } from '../dimensions';
 

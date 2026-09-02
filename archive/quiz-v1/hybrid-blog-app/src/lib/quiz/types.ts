@@ -1,3 +1,4 @@
+// Archived from the active Astro app on 2026-09-03.
 import type { BiText } from './dimensions';
 
 export interface PersonalityType {

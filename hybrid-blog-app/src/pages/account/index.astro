@@ -52,7 +52,7 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 
         <p id="auth-error" class="auth-error" hidden></p>
 
-        <button id="auth-submit" class="quiz-btn primary" type="submit">Sign in / 登录</button>
+        <button id="auth-submit" class="account-btn primary" type="submit">Sign in / 登录</button>
       </form>
     </section>
 
@@ -63,17 +63,9 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
         <h2 id="profile-username"></h2>
         <p id="profile-meta" class="meta"></p>
         <div class="profile-actions">
-          <button id="signout-btn" class="quiz-btn outline" type="button">Sign out / 登出</button>
+          <button id="signout-btn" class="account-btn outline" type="button">Sign out / 登出</button>
         </div>
       </div>
-
-      <h2 class="history-title">Quiz history · 测试记录</h2>
-      <ul id="history-list" class="history-list"></ul>
-      <p id="history-empty" class="history-empty" hidden>
-        No attempts yet. <a href="/quiz/">Take the quiz</a> first.
-        <br />
-        还没有记录。先去 <a href="/quiz/">测试人格</a>。
-      </p>
     </section>
   </section>
 </BaseLayout>
@@ -87,9 +79,6 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
     describeError,
     type LocalUser,
   } from '@/lib/auth';
-  import { loadHistory, type QuizAttempt } from '@/lib/quiz/history';
-  import { getTypeById } from '@/lib/quiz/engine';
-
   const $forms = document.getElementById('auth-forms')!;
   const $profile = document.getElementById('profile-view')!;
   const $tabSignIn = document.getElementById('tab-signin') as HTMLButtonElement;
@@ -102,9 +91,6 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
   const $signoutBtn = document.getElementById('signout-btn') as HTMLButtonElement;
   const $profileUsername = document.getElementById('profile-username')!;
   const $profileMeta = document.getElementById('profile-meta')!;
-  const $historyList = document.getElementById('history-list')!;
-  const $historyEmpty = document.getElementById('history-empty')!;
-
   type Mode = 'signin' | 'signup';
   let mode: Mode = 'signin';
 
@@ -147,35 +133,6 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
       ? '🔒 password protected · 已设置密码'
       : '🔓 passwordless · 未设置密码';
     $profileMeta.textContent = `${lockState} · created ${created} · last sign-in ${last}`;
-
-    const history = loadHistory();
-    $historyList.innerHTML = '';
-    if (history.length === 0) {
-      $historyEmpty.hidden = false;
-      return;
-    }
-    $historyEmpty.hidden = true;
-    for (const attempt of history) {
-      $historyList.appendChild(renderAttempt(attempt));
-    }
-  }
-
-  function renderAttempt(att: QuizAttempt): HTMLElement {
-    const li = document.createElement('li');
-    li.className = 'history-item';
-    const type = getTypeById(att.type);
-    const label = type ? (att.locale === 'zh' ? type.label.zh : type.label.en) : att.type;
-    const when = formatDate(att.takenAt);
-    li.innerHTML = `
-      <div class="history-row">
-        <div class="history-main">
-          <p class="history-label">${label}</p>
-          <p class="meta">${when} · locale ${att.locale} · v${att.quizVersion}</p>
-        </div>
-        <a class="history-link" href="/quiz/result/?type=${encodeURIComponent(att.type)}&flavor=${encodeURIComponent(att.soulFlavor)}&locale=${att.locale}">View →</a>
-      </div>
-    `;
-    return li;
   }
 
   function renderLoggedOut() {
@@ -320,8 +277,8 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
     margin: 0;
   }
 
-  /* ---------- Buttons (shared with quiz) ---------- */
-  .quiz-btn {
+  /* ---------- Buttons ---------- */
+  .account-btn {
     font: inherit;
     cursor: pointer;
     border: none;
@@ -333,27 +290,27 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
     transition: all 0.15s ease;
   }
 
-  .quiz-btn:disabled {
+  .account-btn:disabled {
     opacity: 0.55;
     cursor: not-allowed;
   }
 
-  .quiz-btn.primary {
+  .account-btn.primary {
     background: var(--accent);
     color: var(--background);
   }
 
-  .quiz-btn.primary:hover:not(:disabled) {
+  .account-btn.primary:hover:not(:disabled) {
     filter: brightness(1.12);
   }
 
-  .quiz-btn.outline {
+  .account-btn.outline {
     background: transparent;
     color: var(--text);
     border: 1px solid var(--border);
   }
 
-  .quiz-btn.outline:hover {
+  .account-btn.outline:hover {
     border-color: var(--accent);
     color: var(--accent);
   }
@@ -376,51 +333,4 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
     margin-top: 1rem;
   }
 
-  .history-title {
-    font-size: 1.1rem;
-    margin: 1.5rem 0 0.75rem;
-  }
-
-  .history-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: grid;
-    gap: 0.5rem;
-  }
-
-  .history-item {
-    border: 1px solid var(--border);
-    border-radius: 0.75rem;
-    background: var(--surface);
-    padding: 0.85rem 1rem;
-  }
-
-  .history-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-  }
-
-  .history-label {
-    margin: 0 0 0.15rem;
-    font-weight: 700;
-  }
-
-  .history-link {
-    font-size: 0.9rem;
-    text-decoration: none;
-    color: var(--accent);
-    white-space: nowrap;
-  }
-
-  .history-link:hover {
-    text-decoration: underline;
-  }
-
-  .history-empty {
-    color: var(--muted);
-  }
 </style>

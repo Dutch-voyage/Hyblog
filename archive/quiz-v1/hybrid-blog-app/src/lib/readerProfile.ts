@@ -1,3 +1,4 @@
+// Archived with the quiz feature on 2026-09-03.
 import { getCurrentUser } from './auth';
 
 const ANON_KEY = 'hybrid-blog-reader-profile';

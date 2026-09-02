@@ -1,3 +1,4 @@
+// Archived from the active Astro app on 2026-09-03.
 // =============================================================================
 // QUIZ QUESTION ARCHIVE — v0.1
 // Snapshot taken 2026-05-11. This file is a frozen reference copy.
