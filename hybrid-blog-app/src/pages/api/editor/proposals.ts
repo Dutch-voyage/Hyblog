@@ -32,6 +32,7 @@ export const POST: APIRoute = async ({ cookies, request }) => {
     markdown?: string;
     baseSha?: string | null;
     intent?: "draft" | "publish";
+    svizJson?: string | null;
   };
 
   try {
@@ -54,6 +55,7 @@ export const POST: APIRoute = async ({ cookies, request }) => {
         markdown: body.markdown,
         baseSha: body.baseSha,
         intent: body.intent,
+        svizJson: body.svizJson,
       },
       {
         config: getEditorRepositoryConfig(),

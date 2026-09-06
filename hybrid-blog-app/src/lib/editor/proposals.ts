@@ -18,6 +18,7 @@ import {
   EditorContentError,
   prepareEditorContent,
 } from "./content";
+import { prepareSvizAsset, SvizImportError } from "../svizImport";
 
 export interface CreateProposalInput {
   token: string;
@@ -27,12 +28,14 @@ export interface CreateProposalInput {
   markdown: string;
   baseSha?: string | null;
   intent: ProposalIntent;
+  svizJson?: string | null;
 }
 
 export interface CreateProposalResult {
   branch: string;
   head: string;
   path: string;
+  paths: string[];
   prNumber: number;
   prUrl: string;
   repository: string;
@@ -66,6 +69,9 @@ function isPushAllowed(permission?: { admin?: boolean; push?: boolean }) {
 function toHttpError(error: unknown): EditorProposalError {
   if (error instanceof EditorProposalError) return error;
   if (error instanceof EditorContentError) {
+    return new EditorProposalError(error.status, error.message);
+  }
+  if (error instanceof SvizImportError) {
     return new EditorProposalError(error.status, error.message);
   }
   if (error instanceof GitHubApiError) {
@@ -173,6 +179,10 @@ export async function createEditorProposal(
 
   try {
     const prepared = prepareEditorContent(input);
+    if (input.svizJson && prepared.collection !== "demos") {
+      throw new EditorProposalError(400, "sviz JSON can only be attached to demo content.");
+    }
+    const svizAsset = input.svizJson ? prepareSvizAsset(input.svizJson, prepared.slug) : null;
     const currentFile = await getContentFileOrNull(
       input.token,
       options.config.owner,
@@ -195,6 +205,20 @@ export async function createEditorProposal(
       }
     } else if (currentFile) {
       throw new EditorProposalError(409, "A content file already exists for this slug. Choose another slug.");
+    }
+
+    const currentSvizAsset = svizAsset
+      ? await getContentFileOrNull(
+          input.token,
+          options.config.owner,
+          options.config.repo,
+          svizAsset.path,
+          options.config.baseBranch,
+          fetchImpl,
+        )
+      : null;
+    if (currentSvizAsset) {
+      throw new EditorProposalError(409, "A sviz JSON asset already exists for this slug. Choose another slug.");
     }
 
     const originRepo = await getRepository(
@@ -266,6 +290,28 @@ export async function createEditorProposal(
       fetchImpl,
     });
 
+    if (svizAsset) {
+      const branchAsset = await getContentFileOrNull(
+        input.token,
+        target.owner,
+        target.repo,
+        svizAsset.path,
+        branch,
+        fetchImpl,
+      );
+      await putContentFile({
+        token: input.token,
+        owner: target.owner,
+        repo: target.repo,
+        path: svizAsset.path,
+        branch,
+        sha: branchAsset?.sha,
+        content: svizAsset.content,
+        message: `demo(asset): ${svizAsset.path}`,
+        fetchImpl,
+      });
+    }
+
     const head = target.usedFork ? `${input.login}:${branch}` : `${options.config.owner}:${branch}`;
     const existingPr = (
       await listOpenPullRequests({
@@ -286,6 +332,7 @@ export async function createEditorProposal(
           "Submitted from the built-in Markdown editor.",
           "",
           `- Path: \`${prepared.path}\``,
+          ...(svizAsset ? [`- Asset: \`${svizAsset.path}\``] : []),
           `- Status: \`${prepared.status}\``,
           `- Author: @${input.login}`,
         ].join("\n"),
@@ -297,6 +344,7 @@ export async function createEditorProposal(
       branch,
       head,
       path: prepared.path,
+      paths: [prepared.path, ...(svizAsset ? [svizAsset.path] : [])],
       prNumber: pr.number,
       prUrl: pr.html_url,
       repository: `${target.owner}/${target.repo}`,

@@ -1,0 +1,448 @@
+{
+  "format": "sviz-display",
+  "format_version": "0.2-draft",
+  "visualization_id": "nested-example",
+  "base_revision": "sha256:68106a3f668afa0453e3b5daad08618adf6359464c2a200580004f593ff06042",
+  "title": "Nested machine components",
+  "description": null,
+  "source": {
+    "version": "0.2-draft",
+    "id": "nested-example",
+    "title": "Nested machine components",
+    "time": {
+      "mode": "steps"
+    },
+    "places": [
+      {
+        "id": "architecture.canvas",
+        "label": "Machine architecture",
+        "attrs": {
+          "dsl_implicit": true,
+          "dsl_view": "architecture",
+          "dsl_kind": "plane"
+        },
+        "tags": {},
+        "role": "group",
+        "layout": "grid",
+        "capacity": {}
+      },
+      {
+        "id": "machine",
+        "label": "Machine",
+        "attrs": {
+          "dsl_kind": "object"
+        },
+        "tags": {},
+        "parent": "architecture.canvas",
+        "role": "group",
+        "layout": "hierarchy",
+        "capacity": {}
+      },
+      {
+        "id": "processor",
+        "label": "Processor",
+        "attrs": {
+          "dsl_kind": "object"
+        },
+        "tags": {},
+        "parent": "machine",
+        "role": "group",
+        "layout": "hierarchy",
+        "capacity": {}
+      },
+      {
+        "id": "core-0",
+        "label": "Core 0",
+        "attrs": {
+          "dsl_kind": "object"
+        },
+        "tags": {},
+        "parent": "processor",
+        "role": "group",
+        "layout": "hierarchy",
+        "capacity": {}
+      },
+      {
+        "id": "core-1",
+        "label": "Core 1",
+        "attrs": {
+          "dsl_kind": "object"
+        },
+        "tags": {},
+        "parent": "processor",
+        "role": "group",
+        "layout": "hierarchy",
+        "capacity": {}
+      },
+      {
+        "id": "memory",
+        "label": "Memory",
+        "attrs": {
+          "dsl_kind": "object"
+        },
+        "tags": {},
+        "parent": "machine",
+        "role": "group",
+        "layout": "hierarchy",
+        "capacity": {}
+      }
+    ],
+    "resources": [],
+    "links": [
+      {
+        "id": "architecture.connection.core-0.memory",
+        "label": "loads from",
+        "attrs": {
+          "semantic_role": "edge",
+          "source_plane": "architecture.canvas",
+          "target_plane": "architecture.canvas"
+        },
+        "tags": {},
+        "from": "core-0",
+        "to": "memory",
+        "directed": true
+      }
+    ],
+    "entities": [],
+    "initial_materializations": [],
+    "operations": [],
+    "stages": [],
+    "flows": [],
+    "annotations": [],
+    "checkpoints": [
+      {
+        "id": "checkpoint.initial",
+        "label": "Initial state",
+        "attrs": {},
+        "tags": {},
+        "step": 1,
+        "narrative": "Inspect the authored planes, elements, and semantic edges.",
+        "focus": []
+      }
+    ],
+    "views": [
+      {
+        "id": "architecture",
+        "label": "Machine architecture",
+        "attrs": {},
+        "tags": {},
+        "kind": "spatial",
+        "roots": [
+          "architecture.canvas"
+        ],
+        "resources": [],
+        "draggable": [
+          "architecture.canvas"
+        ],
+        "importance": []
+      }
+    ]
+  },
+  "semantic": {
+    "places": [
+      {
+        "id": "architecture.canvas",
+        "label": "Machine architecture",
+        "attrs": {
+          "dsl_implicit": true,
+          "dsl_view": "architecture",
+          "dsl_kind": "plane"
+        },
+        "tags": {},
+        "role": "group",
+        "layout": "grid",
+        "capacity": {}
+      },
+      {
+        "id": "machine",
+        "label": "Machine",
+        "attrs": {
+          "dsl_kind": "object"
+        },
+        "tags": {},
+        "parent": "architecture.canvas",
+        "role": "group",
+        "layout": "hierarchy",
+        "capacity": {}
+      },
+      {
+        "id": "processor",
+        "label": "Processor",
+        "attrs": {
+          "dsl_kind": "object"
+        },
+        "tags": {},
+        "parent": "machine",
+        "role": "group",
+        "layout": "hierarchy",
+        "capacity": {}
+      },
+      {
+        "id": "core-0",
+        "label": "Core 0",
+        "attrs": {
+          "dsl_kind": "object"
+        },
+        "tags": {},
+        "parent": "processor",
+        "role": "group",
+        "layout": "hierarchy",
+        "capacity": {}
+      },
+      {
+        "id": "core-1",
+        "label": "Core 1",
+        "attrs": {
+          "dsl_kind": "object"
+        },
+        "tags": {},
+        "parent": "processor",
+        "role": "group",
+        "layout": "hierarchy",
+        "capacity": {}
+      },
+      {
+        "id": "memory",
+        "label": "Memory",
+        "attrs": {
+          "dsl_kind": "object"
+        },
+        "tags": {},
+        "parent": "machine",
+        "role": "group",
+        "layout": "hierarchy",
+        "capacity": {}
+      }
+    ],
+    "resources": [],
+    "links": [
+      {
+        "id": "architecture.connection.core-0.memory",
+        "label": "loads from",
+        "attrs": {
+          "semantic_role": "edge",
+          "source_plane": "architecture.canvas",
+          "target_plane": "architecture.canvas"
+        },
+        "tags": {},
+        "from": "core-0",
+        "to": "memory",
+        "directed": true
+      }
+    ],
+    "entities": [],
+    "operations": [],
+    "stages": [],
+    "flows": [],
+    "stage_index": {}
+  },
+  "content": {
+    "annotations": []
+  },
+  "execution": {
+    "mode": "steps",
+    "unit": null,
+    "events": [],
+    "checkpoints": [
+      {
+        "id": "checkpoint.initial",
+        "cursor": 1.0,
+        "title": "Initial state",
+        "detail": null,
+        "narrative": "Inspect the authored planes, elements, and semantic edges.",
+        "focus": [],
+        "active_stages": [],
+        "active_flows": [],
+        "materializations": [],
+        "resource_ledgers": [],
+        "changes": {
+          "created": [],
+          "retired": [],
+          "updated": []
+        }
+      }
+    ]
+  },
+  "display": {
+    "views": [
+      {
+        "id": "architecture",
+        "label": "Machine architecture",
+        "kind": "spatial",
+        "attrs": {},
+        "roots": [
+          "architecture.canvas"
+        ],
+        "draggable": [
+          "architecture.canvas"
+        ],
+        "importance": [],
+        "places": [
+          {
+            "id": "architecture.canvas",
+            "label": "Machine architecture",
+            "parent": null,
+            "role": "group",
+            "layout": "grid"
+          },
+          {
+            "id": "machine",
+            "label": "Machine",
+            "parent": "architecture.canvas",
+            "role": "group",
+            "layout": "hierarchy"
+          },
+          {
+            "id": "processor",
+            "label": "Processor",
+            "parent": "machine",
+            "role": "group",
+            "layout": "hierarchy"
+          },
+          {
+            "id": "core-0",
+            "label": "Core 0",
+            "parent": "processor",
+            "role": "group",
+            "layout": "hierarchy"
+          },
+          {
+            "id": "core-1",
+            "label": "Core 1",
+            "parent": "processor",
+            "role": "group",
+            "layout": "hierarchy"
+          },
+          {
+            "id": "memory",
+            "label": "Memory",
+            "parent": "machine",
+            "role": "group",
+            "layout": "hierarchy"
+          }
+        ],
+        "children": {
+          "architecture.canvas": [
+            "machine"
+          ],
+          "machine": [
+            "processor",
+            "memory"
+          ],
+          "processor": [
+            "core-0",
+            "core-1"
+          ]
+        },
+        "routes": [
+          {
+            "id": "architecture.connection.core-0.memory",
+            "label": "loads from",
+            "from": "core-0",
+            "to": "memory",
+            "from_root": "architecture.canvas",
+            "to_root": "architecture.canvas",
+            "directed": true,
+            "resource": null,
+            "semantic_role": "edge"
+          }
+        ],
+        "geometry": {
+          "wide": {
+            "canvas": {
+              "width": 1000.0,
+              "height": 582.0
+            },
+            "places": {
+              "architecture.canvas": {
+                "x": 20.0,
+                "y": 76.0,
+                "w": 960.0,
+                "h": 430.0
+              },
+              "machine": {
+                "x": 32.0,
+                "y": 120.0,
+                "w": 936.0,
+                "h": 368.0
+              },
+              "processor": {
+                "x": 44.0,
+                "y": 162.0,
+                "w": 912.0,
+                "h": 152.0
+              },
+              "core-0": {
+                "x": 56.0,
+                "y": 204.0,
+                "w": 888.0,
+                "h": 44.0
+              },
+              "core-1": {
+                "x": 56.0,
+                "y": 258.0,
+                "w": 888.0,
+                "h": 44.0
+              },
+              "memory": {
+                "x": 44.0,
+                "y": 324.0,
+                "w": 912.0,
+                "h": 152.0
+              }
+            }
+          },
+          "narrow": {
+            "canvas": {
+              "width": 360.0,
+              "height": 400.0
+            },
+            "places": {
+              "architecture.canvas": {
+                "x": 34.0,
+                "y": 28.0,
+                "w": 292.0,
+                "h": 356.0
+              },
+              "machine": {
+                "x": 46.0,
+                "y": 71.0,
+                "w": 268.0,
+                "h": 300.0
+              },
+              "processor": {
+                "x": 55.0,
+                "y": 106.0,
+                "w": 250.0,
+                "h": 124.0
+              },
+              "core-0": {
+                "x": 64.0,
+                "y": 141.0,
+                "w": 232.0,
+                "h": 36.0
+              },
+              "core-1": {
+                "x": 64.0,
+                "y": 184.0,
+                "w": 232.0,
+                "h": 36.0
+              },
+              "memory": {
+                "x": 55.0,
+                "y": 237.0,
+                "w": 250.0,
+                "h": 124.0
+              }
+            }
+          }
+        }
+      }
+    ],
+    "inspectors": {
+      "source": false,
+      "compiled": false
+    }
+  },
+  "warnings": []
+}
