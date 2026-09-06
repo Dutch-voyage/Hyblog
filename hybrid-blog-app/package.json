@@ -3,7 +3,9 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "predev": "astro sync --force",
     "dev": "astro dev",
+    "prestart": "astro sync --force",
     "start": "astro dev",
     "build": "astro check && astro build",
     "preview": "astro preview",
