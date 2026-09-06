@@ -33,6 +33,7 @@ export const POST: APIRoute = async ({ cookies, request }) => {
     baseSha?: string | null;
     intent?: "draft" | "publish";
     svizJson?: string | null;
+    svizAssetSlug?: string | null;
   };
 
   try {
@@ -56,6 +57,7 @@ export const POST: APIRoute = async ({ cookies, request }) => {
         baseSha: body.baseSha,
         intent: body.intent,
         svizJson: body.svizJson,
+        svizAssetSlug: body.svizAssetSlug,
       },
       {
         config: getEditorRepositoryConfig(),

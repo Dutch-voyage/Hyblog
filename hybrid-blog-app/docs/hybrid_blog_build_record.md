@@ -178,7 +178,6 @@ formats:
 
 ```yaml
 type: "demo"
-demoUrl: "https://example.com"
 repositoryUrl: "https://example.com"
 formats:
   - "demo"

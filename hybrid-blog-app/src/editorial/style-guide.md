@@ -27,7 +27,7 @@ For notes:
 2. Use a short title that can stand alone.
 3. Add tags that make the note discoverable later.
 
-For demos:
+For articles containing demos:
 
 1. Explain what the demo proves.
 2. Link to the live demo or repository when available.

@@ -87,6 +87,47 @@ export function getSvizAssetPath(slug: string) {
   return `hybrid-blog-app/public/demos/sviz/${validateSlug(slug)}.json`;
 }
 
+function escapeHtmlAttribute(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+export function slugifySvizAsset(value: string) {
+  return (
+    value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "demo"
+  );
+}
+
+export function renderSvizMarkdownEmbed(input: {
+  assetSlug: string;
+  visualizationId: string;
+  caption: string;
+}) {
+  const assetSlug = validateSlug(input.assetSlug);
+  const visualizationId = escapeHtmlAttribute(input.visualizationId);
+  const caption = escapeHtmlAttribute(input.caption);
+
+  return `<figure class="sviz-demo">
+  <div class="sviz-demo-frame">
+    <systems-viz-next
+      src="/demos/sviz/${assetSlug}.json"
+      visualization-id="${visualizationId}"
+      theme="auto"
+      style="--sv-bg: var(--background); --sv-panel: var(--surface); --sv-panel-soft: color-mix(in srgb, var(--surface) 68%, var(--accent-soft)); --sv-text: var(--text); --sv-muted: var(--muted); --sv-border: var(--border); --sv-primary: var(--accent); --sv-selection: var(--accent);"
+    ></systems-viz-next>
+  </div>
+  <figcaption>${caption}</figcaption>
+</figure>
+<script type="module" src="/demos/sviz/systems-viz-next.js"></script>`;
+}
+
 export function prepareSvizAsset(json: string, slug: string): PreparedSvizAsset {
   const document = parseSvizDisplayJson(json);
   return {

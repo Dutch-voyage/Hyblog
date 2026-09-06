@@ -22,7 +22,7 @@ formats:
 
 Body text.`;
 
-const demoMarkdown = `---
+const articleWithDemoMarkdown = `---
 title: "Service map"
 description: "An imported sviz demo."
 pubDate: 2026-09-06
@@ -32,12 +32,10 @@ tags:
   - "sviz"
 status: "draft"
 formats:
-  - "demo"
+  - "blog"
 ---
 
-import SvizEmbed from "@/components/SvizEmbed.astro";
-
-<SvizEmbed src="/demos/sviz/service-map.json" visualizationId="service-map" caption="Service map" />`;
+<systems-viz-next src="/demos/sviz/service-map.json" visualization-id="service-map" theme="auto"></systems-viz-next>`;
 
 const svizJson = JSON.stringify({
   format: "sviz-display",
@@ -190,7 +188,7 @@ describe("editor GitHub proposals", () => {
       if (method === "GET" && url.pathname === "/repos/Dutch-voyage/Hyblog/git/ref/heads/main") {
         return json({ object: { sha: "base-sha" } });
       }
-      if (method === "GET" && url.pathname.includes("/git/ref/heads/cms/owner/service-map")) {
+      if (method === "GET" && url.pathname.includes("/git/ref/heads/cms/owner/service-article")) {
         return json({ message: "Not Found" }, 404);
       }
       if (method === "POST" && url.pathname === "/repos/Dutch-voyage/Hyblog/git/refs") {
@@ -215,10 +213,11 @@ describe("editor GitHub proposals", () => {
       {
         token: "token",
         login: "owner",
-        collection: "demos",
-        slug: "service-map",
-        markdown: demoMarkdown,
+        collection: "posts",
+        slug: "service-article",
+        markdown: articleWithDemoMarkdown,
         svizJson,
+        svizAssetSlug: "service-map",
         intent: "draft",
       },
       { config, fetchImpl },
@@ -228,12 +227,12 @@ describe("editor GitHub proposals", () => {
     expect(writes).toHaveLength(2);
     expect(writes.map((call) => decodeURIComponent(call.pathname))).toEqual(
       expect.arrayContaining([
-        expect.stringContaining("hybrid-blog-app/src/content/demos/service-map.mdx"),
+        expect.stringContaining("hybrid-blog-app/src/content/posts/service-article.md"),
         expect.stringContaining("hybrid-blog-app/public/demos/sviz/service-map.json"),
       ]),
     );
     expect(result.paths).toEqual([
-      "hybrid-blog-app/src/content/demos/service-map.mdx",
+      "hybrid-blog-app/src/content/posts/service-article.md",
       "hybrid-blog-app/public/demos/sviz/service-map.json",
     ]);
   });

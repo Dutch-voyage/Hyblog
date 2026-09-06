@@ -8,26 +8,20 @@ const MAX_JSON_BYTES = 2 * 1024 * 1024;
 const DEFAULT_APP_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 function usage() {
-  return `Import one compiled sviz display as Hyblog demo content.
+  return `Import one compiled sviz display as a Hyblog asset.
 
 Usage:
-  npm run import:sviz -- --json <compiled.json> --content <slug> [options]
+  npm run import:sviz -- --json <compiled.json> [options]
 
 Required:
   --json <path>          Compiled sviz-display JSON
 
 Options:
-  --content <slug>       Content and asset slug (defaults to visualization_id)
-  --title <text>         Content title (defaults to the compiled title)
-  --description <text>   Content summary
-  --body <text>          Introductory article text
+  --asset <slug>         Asset slug (defaults to visualization_id)
+  --content <slug>       Deprecated alias for --asset
   --caption <text>       Viewer caption
-  --author <id>          Author ID (default: owner)
-  --tags <a,b,c>         Comma-separated tags
-  --date <YYYY-MM-DD>    Publication date (default: today)
-  --status <status>      draft or published (default: draft)
   --app-dir <path>       Hyblog app directory
-  --force                Replace existing matching content and JSON files
+  --force                Replace an existing matching JSON asset
   --help                 Show this help
 `;
 }
@@ -36,15 +30,9 @@ function parseArgs(argv) {
   const options = {};
   const allowed = new Set([
     "json",
+    "asset",
     "content",
-    "title",
-    "description",
-    "body",
     "caption",
-    "author",
-    "tags",
-    "date",
-    "status",
     "app-dir",
     "force",
     "help",
@@ -112,13 +100,9 @@ function slugify(value) {
 
 function validateSlug(value) {
   if (!/^[a-z0-9\u4e00-\u9fa5][a-z0-9\u4e00-\u9fa5-]*$/.test(value)) {
-    throw new Error("Content slug may contain lowercase letters, numbers, CJK characters, and hyphens only.");
+    throw new Error("Asset slug may contain lowercase letters, numbers, CJK characters, and hyphens only.");
   }
   return value;
-}
-
-function yamlList(values) {
-  return values.map((value) => `  - ${JSON.stringify(value)}`).join("\n");
 }
 
 function escapeAttribute(value) {
@@ -129,30 +113,19 @@ function escapeAttribute(value) {
     .replaceAll(">", "&gt;");
 }
 
-function renderMdx(input) {
-  return `---
-title: ${JSON.stringify(input.title)}
-description: ${JSON.stringify(input.description)}
-pubDate: ${input.date}
-authors:
-${yamlList([input.author])}
-tags:
-${yamlList(input.tags)}
-status: ${JSON.stringify(input.status)}
-formats:
-${yamlList(["demo", "interactive"])}
----
-
-import SvizEmbed from "@/components/SvizEmbed.astro";
-
-${input.body}
-
-<SvizEmbed
-  src="/demos/sviz/${escapeAttribute(input.slug)}.json"
-  visualizationId="${escapeAttribute(input.visualizationId)}"
-  caption="${escapeAttribute(input.caption)}"
-/>
-`;
+function renderMarkdownEmbed(input) {
+  return `<figure class="sviz-demo">
+  <div class="sviz-demo-frame">
+    <systems-viz-next
+      src="/demos/sviz/${escapeAttribute(input.slug)}.json"
+      visualization-id="${escapeAttribute(input.visualizationId)}"
+      theme="auto"
+      style="--sv-bg: var(--background); --sv-panel: var(--surface); --sv-panel-soft: color-mix(in srgb, var(--surface) 68%, var(--accent-soft)); --sv-text: var(--text); --sv-muted: var(--muted); --sv-border: var(--border); --sv-primary: var(--accent); --sv-selection: var(--accent);"
+    ></systems-viz-next>
+  </div>
+  <figcaption>${escapeAttribute(input.caption)}</figcaption>
+</figure>
+<script type="module" src="/demos/sviz/systems-viz-next.js"></script>`;
 }
 
 async function pathExists(filePath) {
@@ -181,69 +154,30 @@ async function main() {
   const jsonPath = path.resolve(options.json);
   const source = await readFile(jsonPath, "utf8");
   const document = parseDisplayJson(source);
-  const slug = validateSlug(options.content ?? slugify(document.visualization_id));
-  const title = options.title ?? document.title;
-  const description =
-    options.description ??
-    (typeof document.description === "string" && document.description.trim()
-      ? document.description.trim()
-      : `Interactive sviz demo: ${title}.`);
-  const body = options.body ?? description;
+  const slug = validateSlug(options.asset ?? options.content ?? slugify(document.visualization_id));
   const caption = options.caption ?? document.title;
-  const author = options.author ?? "owner";
-  const tags = (options.tags ?? "demo,visualization,sviz")
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
-  const date = options.date ?? new Date().toISOString().slice(0, 10);
-  const status = options.status ?? "draft";
 
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(`${date}T00:00:00Z`))) {
-    throw new Error("--date must be a valid YYYY-MM-DD date.");
-  }
-  if (!['draft', 'published'].includes(status)) {
-    throw new Error("--status must be draft or published.");
-  }
-  if (!tags.length) throw new Error("--tags must contain at least one tag.");
-
-  const componentPath = path.join(appDir, "src/components/SvizEmbed.astro");
   const runtimePath = path.join(appDir, "public/demos/sviz/systems-viz-next.js");
-  if (!(await pathExists(componentPath)) || !(await pathExists(runtimePath))) {
-    throw new Error("This Hyblog checkout does not include the sviz embed component and viewer runtime.");
+  if (!(await pathExists(runtimePath))) {
+    throw new Error("This Hyblog checkout does not include the sviz viewer runtime.");
   }
 
   const assetPath = path.join(appDir, "public/demos/sviz", `${slug}.json`);
-  const contentPath = path.join(appDir, "src/content/demos", `${slug}.mdx`);
-  const existing = [];
-  if (await pathExists(assetPath)) existing.push(assetPath);
-  if (await pathExists(contentPath)) existing.push(contentPath);
-  if (existing.length && !options.force) {
-    throw new Error(`Refusing to replace existing files:\n${existing.map((value) => `  ${value}`).join("\n")}\nPass --force to replace them.`);
+  if ((await pathExists(assetPath)) && !options.force) {
+    throw new Error(`Refusing to replace existing asset:\n  ${assetPath}\nPass --force to replace it.`);
   }
 
   await mkdir(path.dirname(assetPath), { recursive: true });
-  await mkdir(path.dirname(contentPath), { recursive: true });
   await writeFile(assetPath, `${JSON.stringify(document, null, 2)}\n`, "utf8");
-  await writeFile(
-    contentPath,
-    renderMdx({
-      author,
-      body,
-      caption,
-      date,
-      description,
-      slug,
-      status,
-      tags,
-      title,
-      visualizationId: document.visualization_id,
-    }),
-    "utf8",
-  );
 
-  process.stdout.write(`Imported sviz demo ${document.visualization_id}\n`);
-  process.stdout.write(`  content: ${path.relative(process.cwd(), contentPath)}\n`);
-  process.stdout.write(`  asset:   ${path.relative(process.cwd(), assetPath)}\n`);
+  process.stdout.write(`Imported sviz asset ${document.visualization_id}\n`);
+  process.stdout.write(`  asset: ${path.relative(process.cwd(), assetPath)}\n\n`);
+  process.stdout.write("Copy this into any Markdown content:\n\n");
+  process.stdout.write(`${renderMarkdownEmbed({
+    caption,
+    slug,
+    visualizationId: document.visualization_id,
+  })}\n`);
 }
 
 main().catch((error) => {

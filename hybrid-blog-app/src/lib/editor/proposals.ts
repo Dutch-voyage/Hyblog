@@ -29,6 +29,7 @@ export interface CreateProposalInput {
   baseSha?: string | null;
   intent: ProposalIntent;
   svizJson?: string | null;
+  svizAssetSlug?: string | null;
 }
 
 export interface CreateProposalResult {
@@ -179,10 +180,9 @@ export async function createEditorProposal(
 
   try {
     const prepared = prepareEditorContent(input);
-    if (input.svizJson && prepared.collection !== "demos") {
-      throw new EditorProposalError(400, "sviz JSON can only be attached to demo content.");
-    }
-    const svizAsset = input.svizJson ? prepareSvizAsset(input.svizJson, prepared.slug) : null;
+    const svizAsset = input.svizJson
+      ? prepareSvizAsset(input.svizJson, input.svizAssetSlug?.trim() || prepared.slug)
+      : null;
     const currentFile = await getContentFileOrNull(
       input.token,
       options.config.owner,

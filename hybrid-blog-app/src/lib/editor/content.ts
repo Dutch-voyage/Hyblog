@@ -1,4 +1,4 @@
-export const editorCollections = ["posts", "notes", "demos"] as const;
+export const editorCollections = ["posts", "notes"] as const;
 
 export type EditorCollection = (typeof editorCollections)[number];
 export type ProposalIntent = "draft" | "publish";
@@ -34,8 +34,8 @@ export function isEditorCollection(value: string): value is EditorCollection {
   return (editorCollections as readonly string[]).includes(value);
 }
 
-export function getCollectionExtension(collection: EditorCollection) {
-  return collection === "demos" ? "mdx" : "md";
+export function getCollectionExtension(_collection: EditorCollection) {
+  return "md" as const;
 }
 
 export function getEditorContentPath(collection: EditorCollection, slug: string) {
@@ -198,11 +198,6 @@ export function prepareEditorContent(input: {
   ensureStringList(parsed.frontmatter, "formats");
   ensureOptionalUrl(parsed.frontmatter, "canonicalUrl");
 
-  if (input.collection === "demos") {
-    ensureOptionalUrl(parsed.frontmatter, "demoUrl");
-    ensureOptionalUrl(parsed.frontmatter, "repositoryUrl");
-  }
-
   const status = parsed.frontmatter.status;
   if (status !== "draft" && status !== "published") {
     throw new EditorContentError(400, 'Frontmatter field "status" must be draft or published.');
@@ -221,4 +216,3 @@ export function prepareEditorContent(input: {
     status,
   };
 }
-

@@ -4,6 +4,8 @@ import {
   SvizImportError,
   parseSvizDisplayJson,
   prepareSvizAsset,
+  renderSvizMarkdownEmbed,
+  slugifySvizAsset,
 } from "./svizImport";
 
 const validDisplay = {
@@ -47,5 +49,23 @@ describe("sviz JSON imports", () => {
     expect(() => parseSvizDisplayJson(" ".repeat(MAX_SVIZ_JSON_BYTES + 1))).toThrow(
       "2 MiB",
     );
+  });
+
+  it("creates a Markdown-compatible embed snippet", () => {
+    expect(slugifySvizAsset("Service Map / v2")).toBe("service-map-v2");
+    expect(
+      renderSvizMarkdownEmbed({
+        assetSlug: "service-map",
+        visualizationId: "service-map",
+        caption: "Service map",
+      }),
+    ).toContain('src="/demos/sviz/service-map.json"');
+    expect(
+      renderSvizMarkdownEmbed({
+        assetSlug: "service-map",
+        visualizationId: "service-map",
+        caption: "Service map",
+      }),
+    ).toContain("systems-viz-next.js");
   });
 });
