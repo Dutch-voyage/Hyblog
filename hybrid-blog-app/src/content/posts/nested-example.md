@@ -8,7 +8,7 @@ tags:
   - "demo"
   - "visualization"
   - "sviz"
-status: "published"
+status: "draft"
 formats:
   - "blog"
   - "interactive"
