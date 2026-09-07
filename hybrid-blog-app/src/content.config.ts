@@ -14,7 +14,7 @@ const baseContentSchema = z.object({
   updatedDate: z.coerce.date().optional(),
   authors: z.array(z.string()).default(["owner"]),
   tags: z.array(z.string()).default([]),
-  status: z.enum(["draft", "published"]).default("published"),
+  status: z.enum(["draft", "staged", "published"]).default("published"),
   cover: z.string().optional(),
   canonicalUrl: optionalUrl,
   slug: z.string().optional(),

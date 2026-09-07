@@ -1,0 +1,332 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import {
+  getAllEntries,
+  getEntryHref,
+  getDraftPreviewHref,
+  getEntryEditHref,
+  getEntrySourcePath,
+} from "@/lib/content";
+
+export const prerender = false;
+
+const entries = await getAllEntries();
+
+const collectionLabels = {
+  posts: "文章",
+  notes: "笔记",
+} as const;
+
+function formatDate(date: Date) {
+  return new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium" }).format(date);
+}
+
+function getExcerpt(body = "") {
+  const text = body
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/[#>*_`[\]()!-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!text) return "这条内容还没有正文。";
+  return text.length > 220 ? `${text.slice(0, 217).trimEnd()}...` : text;
+}
+
+const items = entries.map((entry) => {
+  const sourcePath = getEntrySourcePath(entry);
+  const body = entry.body ?? "";
+
+  return {
+    id: `${entry.collection}:${entry.id}`,
+    collection: entry.collection,
+    collectionLabel: collectionLabels[entry.collection],
+    title: entry.data.title,
+    status: entry.data.status,
+    description: entry.data.description,
+    pubDate: formatDate(entry.data.pubDate),
+    tags: entry.data.tags,
+    sourcePath,
+    previewHref: entry.data.status === "published" ? getEntryHref(entry) : getDraftPreviewHref(entry),
+    editHref: getEntryEditHref(entry),
+    excerpt: getExcerpt(body),
+    searchText: [
+      entry.data.title,
+      entry.data.description,
+      entry.collection,
+      entry.id,
+      sourcePath,
+      ...entry.data.tags,
+      body,
+    ]
+      .join(" ")
+      .toLowerCase(),
+  };
+});
+---
+
+<BaseLayout title="内容工作台" description="登录后管理草稿、待发布和已发布内容。">
+  <section class="hero drafts-hero">
+    <p class="eyebrow">GitHub · Editor workspace</p>
+    <h1>内容工作台</h1>
+    <p class="lede">管理草稿、待发布和已发布内容。草稿和待发布内容仅 GitHub 登录用户可见。</p>
+    <p class="draft-actions"><a class="button-link" href="/editor/">新建内容</a><a href="/api/auth/github/logout?returnTo=/editor/workspace/">退出 GitHub 登录</a></p>
+    <p class="meta">状态变更通过 PR 提交，合并并部署后生效。</p>
+  </section>
+
+  <section class="draft-toolbar" aria-label="内容筛选">
+    <label>
+      状态
+      <select id="draft-status-filter">
+        <option value="all">全部内容</option>
+        <option value="draft">草稿 / Draft</option>
+        <option value="staged">待发布 / Staged</option>
+        <option value="published">已发布 / Published</option>
+      </select>
+    </label>
+    <label>
+      搜索
+      <input id="draft-search" type="search" placeholder="标题、标签、slug 或正文" />
+    </label>
+    <label>
+      类型
+      <select id="draft-collection-filter">
+        <option value="all">全部</option>
+        <option value="posts">文章</option>
+        <option value="notes">笔记</option>
+      </select>
+    </label>
+    <p id="draft-count" class="meta" aria-live="polite"></p>
+  </section>
+
+  {
+    items.length === 0 ? (
+      <section class="empty-drafts">
+        <h2>暂无内容</h2>
+        <p>点击新建内容开始写作。</p>
+        <a class="button-link" href="/editor/">新建内容</a>
+      </section>
+    ) : (
+      <>
+        <ol id="draft-list" class="draft-list">
+          {items.map((draft) => (
+            <li
+              class="draft-card"
+              data-draft-card
+              data-collection={draft.collection}
+              data-status={draft.status}
+              data-search-text={draft.searchText}
+            >
+              <article>
+                <div class="draft-card-header">
+                  <div>
+                    <p class="meta">
+                      {draft.collectionLabel} / {draft.pubDate}
+                      <span class={`status-badge ${draft.status}`}>{{ draft: "草稿 / Draft", staged: "待发布 / Staged", published: "已发布 / Published" }[draft.status]}</span>
+                    </p>
+                    <h2>{draft.title}</h2>
+                  </div>
+                  <div class="draft-actions" aria-label={`${draft.title} actions`}>
+                    <a class="button-link subtle" href={draft.previewHref}>
+                      预览
+                    </a>
+                    <a class="button-link" href={draft.editHref}>
+                      编辑
+                    </a>
+                  </div>
+                </div>
+
+                <p class="description">{draft.description}</p>
+                <p class="excerpt">{draft.excerpt}</p>
+                <p class="source-path">
+                  <code>{draft.sourcePath}</code>
+                </p>
+                {draft.tags.length > 0 && (
+                  <ul class="tag-list" aria-label={`${draft.title} tags`}>
+                    {draft.tags.map((tag) => (
+                      <li>{tag}</li>
+                    ))}
+                  </ul>
+                )}
+              </article>
+            </li>
+          ))}
+        </ol>
+        <p id="empty-filter-message" class="empty-filter" hidden>
+          没有符合筛选条件的内容。
+        </p>
+      </>
+    )
+  }
+</BaseLayout>
+
+<script>
+  const statusFilter = document.getElementById("draft-status-filter") as HTMLSelectElement | null;
+  const initialStatus = new URLSearchParams(window.location.search).get("status");
+  if (statusFilter && initialStatus && ["draft", "staged", "published"].includes(initialStatus)) statusFilter.value = initialStatus;
+  const searchInput = document.getElementById("draft-search") as HTMLInputElement | null;
+  const collectionFilter = document.getElementById("draft-collection-filter") as HTMLSelectElement | null;
+  const countLabel = document.getElementById("draft-count");
+  const emptyFilterMessage = document.getElementById("empty-filter-message") as HTMLElement | null;
+  const cards = Array.from(document.querySelectorAll<HTMLElement>("[data-draft-card]"));
+
+  function updateDraftList() {
+    const query = searchInput?.value.trim().toLowerCase() ?? "";
+    const collection = collectionFilter?.value ?? "all";
+    let visibleCount = 0;
+
+    for (const card of cards) {
+      const matchesQuery = !query || card.dataset.searchText?.includes(query);
+      const matchesCollection = collection === "all" || card.dataset.collection === collection;
+      const isVisible = Boolean(matchesQuery && matchesCollection && (statusFilter?.value === "all" || card.dataset.status === statusFilter?.value));
+      card.hidden = !isVisible;
+      if (isVisible) visibleCount += 1;
+    }
+
+    if (countLabel) countLabel.textContent = `${visibleCount} / ${cards.length} 条内容`;
+    if (emptyFilterMessage) emptyFilterMessage.hidden = visibleCount > 0;
+  }
+
+  statusFilter?.addEventListener("change", updateDraftList);
+  searchInput?.addEventListener("input", updateDraftList);
+  collectionFilter?.addEventListener("change", updateDraftList);
+  updateDraftList();
+</script>
+
+<style>
+  .status-badge { display: inline-block; margin-left: 0.6rem; padding: 0.1rem 0.55rem; border-radius: 999px; background: var(--accent-soft); color: var(--text); font-size: 0.8rem; font-weight: 700; }
+  .status-badge.published { background: var(--surface); border: 1px solid var(--border); }
+  .drafts-hero {
+    padding-bottom: 2rem;
+  }
+
+  .draft-toolbar {
+    display: grid;
+    grid-template-columns: minmax(140px, 180px) minmax(0, 1fr) minmax(120px, 150px) auto;
+    align-items: end;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+  }
+
+  label {
+    display: grid;
+    gap: 0.4rem;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  input,
+  select {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background: var(--surface);
+    color: var(--text);
+    padding: 0.75rem 0.85rem;
+    font: inherit;
+  }
+
+  .draft-list {
+    display: grid;
+    gap: 1rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .draft-card {
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--surface);
+    padding: 1.15rem;
+  }
+
+  .draft-card[hidden] {
+    display: none;
+  }
+
+  .draft-card-header {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .draft-card h2 {
+    margin: 0.25rem 0 0;
+    font-size: 1.35rem;
+    letter-spacing: 0;
+  }
+
+  .description {
+    margin-bottom: 0.4rem;
+  }
+
+  .excerpt {
+    color: var(--text);
+    margin: 0.6rem 0 0.9rem;
+  }
+
+  .source-path {
+    overflow-wrap: anywhere;
+  }
+
+  .draft-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
+  .button-link {
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--background);
+    display: inline-flex;
+    font-weight: 800;
+    line-height: 1.2;
+    padding: 0.55rem 0.85rem;
+    text-decoration: none;
+  }
+
+  .button-link:hover {
+    color: var(--background);
+  }
+
+  .button-link.subtle {
+    background: var(--accent-soft);
+    color: var(--text);
+  }
+
+  .button-link.subtle:hover {
+    color: var(--accent);
+  }
+
+  .empty-drafts,
+  .empty-filter {
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--surface);
+    padding: 1.25rem;
+  }
+
+  .empty-drafts h2 {
+    margin-top: 0;
+  }
+
+  @media (max-width: 720px) {
+    .draft-toolbar {
+      grid-template-columns: 1fr;
+    }
+
+    .draft-card-header {
+      flex-direction: column;
+    }
+
+    .draft-actions {
+      justify-content: flex-start;
+    }
+  }
+</style>

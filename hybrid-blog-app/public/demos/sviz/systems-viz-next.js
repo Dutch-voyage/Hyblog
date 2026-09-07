@@ -846,6 +846,7 @@ class SystemsVizNext extends HTMLElement {
     if (allowedViews.includes(savedView.projection)) this.view = savedView.projection;
     const checkpointIndex = this.checkpoints.findIndex(checkpoint => checkpoint.id === savedView.checkpoint);
     if (checkpointIndex >= 0) this.cursorIndex = checkpointIndex;
+    this.applyCheckpointView(false);
     this.selection = null;
     this.activeAnnotation = null;
     this.narrativeEditing = false;
@@ -941,7 +942,12 @@ class SystemsVizNext extends HTMLElement {
       ...(inspectors.compiled ? [{ id: "compiled", label: "Compiled", kind: "inspector" }] : []),
       ...this.displayViews,
     ];
-    if (!tabs.some(tab => tab.id === this.view)) this.view = this.displayViews[0]?.id || tabs[0]?.id || "";
+    const checkpointViews = this.checkpointViewIds();
+    const visibleTabs = new Set(["ir", "compiled", ...checkpointViews]);
+    if (checkpointViews.includes(this.checkpoint?.view)) this.view = this.checkpoint.view;
+    if (!tabs.some(tab => tab.id === this.view) || !visibleTabs.has(this.view)) {
+      this.view = checkpointViews[0] || this.displayViews[0]?.id || tabs[0]?.id || "";
+    }
     this.shadowRoot.innerHTML = `
       <style>${NEXT_STYLES}</style>
       <div class="root">
@@ -961,7 +967,7 @@ class SystemsVizNext extends HTMLElement {
               <button type="button" class="content-action" data-reload-state ${["conflict", "error"].includes(this.stateStatus) ? "" : "hidden"}>Reload state</button>
             </div>` : ""}
             <div class="tabs" role="tablist" aria-label="Visualization views">
-              ${tabs.map(tab => `<button type="button" class="tab" role="tab" data-view="${escapeText(tab.id)}" aria-selected="${tab.id === this.view}">${escapeText(tab.label)}</button>`).join("")}
+              ${tabs.map(tab => `<button type="button" class="tab" role="tab" data-view="${escapeText(tab.id)}" aria-selected="${tab.id === this.view}" ${visibleTabs.has(tab.id) ? "" : "hidden"}>${escapeText(tab.label)}</button>`).join("")}
             </div>
           </div>
         </header>
@@ -996,6 +1002,7 @@ class SystemsVizNext extends HTMLElement {
   }
 
   setView(view) {
+    if (!["ir", "compiled", ...this.checkpointViewIds()].includes(view)) return;
     this.view = view;
     this.shadowRoot.querySelectorAll("[data-view]").forEach(button => button.setAttribute("aria-selected", String(button.dataset.view === view)));
     this.shadowRoot.querySelectorAll("[data-panel]").forEach(panel => { panel.hidden = panel.dataset.panel !== view; });
@@ -1003,17 +1010,37 @@ class SystemsVizNext extends HTMLElement {
     this.markStateDirty();
   }
 
+  checkpointViewIds() {
+    const authored = this.checkpoint?.views;
+    return Array.isArray(authored) && authored.length
+      ? authored.filter(id => this.displayViews.some(view => view.id === id))
+      : this.displayViews.map(view => view.id);
+  }
+
+  applyCheckpointView(reset = true) {
+    const allowed = this.checkpointViewIds();
+    const preferred = allowed.includes(this.checkpoint?.view) ? this.checkpoint.view : allowed[0];
+    if (reset || !["ir", "compiled", ...allowed].includes(this.view)) this.view = preferred;
+    this.shadowRoot.querySelectorAll("[data-view]").forEach(button => {
+      button.hidden = !["ir", "compiled", ...allowed].includes(button.dataset.view);
+      button.setAttribute("aria-selected", String(button.dataset.view === this.view));
+    });
+    this.shadowRoot.querySelectorAll("[data-panel]").forEach(panel => { panel.hidden = panel.dataset.panel !== this.view; });
+  }
+
   setCursor(index) {
     const next = clampValue(index, 0, this.checkpoints.length - 1);
     if (next === this.cursorIndex) return;
     this.cursorIndex = next;
+    this.applyCheckpointView();
     this.narrativeEditing = false;
+    this.selection = null;
     if (!this.visibleAnnotations().some(annotation => annotation.id === this.activeAnnotation)) this.activeAnnotation = null;
     this.render();
     this.dispatchEvent(new CustomEvent("cursor-change", {
       bubbles: true,
       composed: true,
-      detail: { index: next, checkpoint: this.checkpoint.id, cursor: this.checkpoint.cursor },
+      detail: { index: next, checkpoint: this.checkpoint.id, cursor: this.checkpoint.cursor, view: this.view },
     }));
     this.markStateDirty();
   }
@@ -1776,6 +1803,7 @@ class SystemsVizNext extends HTMLElement {
     const related = new Set(this.selection ? [this.selection] : []);
     if (!related.size) return related;
     const routes = this.spatialViews.flatMap(view => view.routes || []);
+    const correspondences = this.data.display.correspondences || [];
     const marks = this.timelineViews.flatMap(view => view.marks || []);
     let changed = true;
     while (changed) {
@@ -1786,6 +1814,13 @@ class SystemsVizNext extends HTMLElement {
         const selectedEndpoint = endpoints.some(id => related.has(id));
         if (selectedRoute || (route.semantic_role === "equivalence" && selectedEndpoint)) {
           related.add(route.id);
+          endpoints.forEach(id => related.add(id));
+        }
+      }
+      for (const correspondence of correspondences) {
+        const endpoints = [correspondence.from, correspondence.to];
+        if (related.has(correspondence.id) || endpoints.some(id => related.has(id))) {
+          related.add(correspondence.id);
           endpoints.forEach(id => related.add(id));
         }
       }
@@ -1844,6 +1879,7 @@ class SystemsVizNext extends HTMLElement {
   spatialSvg(plan = this.activeViewPlan) {
     const geometry = this.profileGeometry(plan);
     const places = geometry.places;
+    const hiddenPlaces = new Set(plan.places.filter(place => place.hidden).map(place => place.id));
     const activeIds = new Set(this.checkpoint.active_stages);
     const activeStages = this.timelineViews
       .flatMap(view => view.marks || [])
@@ -1909,21 +1945,35 @@ class SystemsVizNext extends HTMLElement {
 
     const placeMarkup = plan.places.map(place => {
       const box = places[place.id];
-      if (!box) return "";
+      if (!box || place.hidden || place.sizing_only) return "";
       const isRoot = plan.roots.includes(place.id);
       const active = activeStages.some(stage => stage.at === place.id);
       const rootSelected = selected === place.id;
       const relatedSelected = related.has(place.id);
-      const stroke = rootSelected || relatedSelected ? "var(--sv-selection)" : active ? "var(--sv-compute)" : "var(--sv-border)";
-      const fill = active ? "color-mix(in srgb, var(--sv-compute) 10%, var(--sv-panel))" : isRoot ? "var(--sv-panel)" : "var(--sv-panel-soft)";
+      const configuredColor = plan.attrs?.element_colors?.[place.kind];
+      const typeColor = typeof configuredColor === "string" && /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(configuredColor)
+        ? configuredColor
+        : null;
+      const stroke = rootSelected || relatedSelected ? "var(--sv-selection)" : active ? "var(--sv-compute)" : typeColor || "var(--sv-border)";
+      const fill = active
+        ? "color-mix(in srgb, var(--sv-compute) 10%, var(--sv-panel))"
+        : typeColor
+          ? `color-mix(in srgb, ${typeColor} 14%, var(--sv-panel))`
+          : isRoot ? "var(--sv-panel)" : "var(--sv-panel-soft)";
       const drag = isRoot && plan.draggable.includes(place.id);
       const fontSize = clampValue((isRoot ? 13 : 11) * this.shapeScale, 9, 17);
       const labelOffset = (isRoot ? 14 : 9) * this.shapeScale;
       const fitted = fitTimelineLabel(place.label, box.w - labelOffset - 8, fontSize);
-      return `<g data-select="${escapeText(place.id)}" data-anchor-target="${escapeText(place.id)}" data-label-fit="${fitted.fit}" data-layout-item="place" data-layout-id="${escapeText(place.id)}" data-layout-parent="${escapeText(place.parent || "")}" tabindex="0" role="button" aria-label="${drag ? `Select or move ${escapeText(place.label)}. Use arrow keys for precise movement.` : `Select ${escapeText(place.label)}.`}" ${drag ? `data-drag-place="${escapeText(place.id)}" data-dragging="${this.dragState?.id === place.id}"` : ""}>
+      const shapeLabel = place.collapsed && Array.isArray(place.shape) ? `${place.shape[0]} × ${place.shape[1]}` : "";
+      const showPlaceLabel = Boolean(fitted.text) && box.h >= fontSize + 4;
+      const placeLabelY = box.y + Math.min((isRoot ? 24 : 18) * this.shapeScale, Math.max(fontSize, box.h * .7));
+      const showShapeLabel = Boolean(shapeLabel) && box.h >= 14;
+      const cardinalityLabel = shapeLabel ? ` ${shapeLabel}, ${place.cardinality} hidden elements.` : "";
+      return `<g data-select="${escapeText(place.id)}" data-anchor-target="${escapeText(place.id)}" data-element-kind="${escapeText(place.kind || "")}" data-collapsed="${place.collapsed === true}" data-cardinality="${place.cardinality || ""}" data-label-fit="${fitted.fit}" data-layout-item="place" data-layout-id="${escapeText(place.id)}" data-layout-parent="${escapeText(place.parent || "")}" tabindex="0" role="button" aria-label="${drag ? `Select or move ${escapeText(place.label)}. Use arrow keys for precise movement.${cardinalityLabel}` : `Select ${escapeText(place.label)}.${cardinalityLabel}`}" ${drag ? `data-drag-place="${escapeText(place.id)}" data-dragging="${this.dragState?.id === place.id}"` : ""}>
         <rect data-layout-box x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="${isRoot ? 9 : 6}" fill="${fill}" stroke="${stroke}" stroke-width="${rootSelected ? 3 : relatedSelected || active ? 2 : 1}"/>
         ${isRoot ? `<rect x="${box.x}" y="${box.y}" width="4" height="${box.h}" rx="2" fill="${place.role === "storage" ? "var(--sv-primary)" : place.role === "buffer" ? "var(--sv-compute)" : "var(--sv-selection)"}"/>` : ""}
-        ${fitted.text ? `<text data-layout-label="place" data-layout-owner="${escapeText(place.id)}" x="${box.x + labelOffset}" y="${box.y + (isRoot ? 24 : 18) * this.shapeScale}" font-size="${fontSize}" font-weight="650">${escapeText(fitted.text)}</text>` : ""}
+        ${showPlaceLabel ? `<text data-layout-label="place" data-layout-owner="${escapeText(place.id)}" x="${box.x + labelOffset}" y="${placeLabelY}" font-size="${fontSize}" font-weight="650">${escapeText(fitted.text)}</text>` : ""}
+        ${showShapeLabel ? `<text x="${box.x + box.w - 8}" y="${box.y + box.h - 9}" text-anchor="end" font-size="9" fill="var(--sv-muted)">${escapeText(shapeLabel)}</text>` : ""}
       </g>`;
     }).join("");
 
@@ -1943,7 +1993,7 @@ class SystemsVizNext extends HTMLElement {
     const chipMarkup = plan.places.map(place => {
       const box = places[place.id];
       const items = materialsByPlace[place.id] || [];
-      if (!box || !items.length) return "";
+      if (!box || place.hidden || !items.length) return "";
       const scale = this.shapeScale;
       const chipHeight = clampValue(23 * scale, 17, 34);
       const gap = clampValue(5 * scale, 3, 8);
@@ -1979,7 +2029,7 @@ class SystemsVizNext extends HTMLElement {
 
     const meterMarkup = Object.entries(ledgersByOwner).map(([owner, ledgers]) => {
       const box = places[owner];
-      if (!box) return "";
+      if (!box || hiddenPlaces.has(owner)) return "";
       return ledgers.filter(ledger => ledger.kind === "storage").map(ledger => {
         const dimension = Object.keys(ledger.capacity)[0];
         const used = ledger.used[dimension] || 0;
@@ -1999,7 +2049,7 @@ class SystemsVizNext extends HTMLElement {
     }).join("");
 
     const activeStageSlots = {};
-    const activeMarkup = activeStages.filter(stage => stage.at && places[stage.at]).map(stage => {
+    const activeMarkup = activeStages.filter(stage => stage.at && places[stage.at] && !hiddenPlaces.has(stage.at)).map(stage => {
       const box = places[stage.at];
       const slot = activeStageSlots[stage.at] || 0;
       activeStageSlots[stage.at] = slot + 1;

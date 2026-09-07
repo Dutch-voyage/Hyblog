@@ -50,7 +50,6 @@ page.launch()
       src="/demos/sviz/matrix.json"
       visualization-id="matrix-example"
       theme="auto"
-      style="--sv-bg: var(--background); --sv-panel: var(--surface); --sv-panel-soft: color-mix(in srgb, var(--surface) 68%, var(--accent-soft)); --sv-text: var(--text); --sv-muted: var(--muted); --sv-border: var(--border); --sv-primary: var(--accent); --sv-selection: var(--accent);"
     ></systems-viz-next>
   </div>
   <figcaption>矩阵示例：选择节点可查看编译后的结构，也可以缩放形状并检查默认布局。</figcaption>
@@ -67,7 +66,6 @@ page.launch()
       src="/demos/sviz/nested.json"
       visualization-id="nested-example"
       theme="auto"
-      style="--sv-bg: var(--background); --sv-panel: var(--surface); --sv-panel-soft: color-mix(in srgb, var(--surface) 68%, var(--accent-soft)); --sv-text: var(--text); --sv-muted: var(--muted); --sv-border: var(--border); --sv-primary: var(--accent); --sv-selection: var(--accent);"
     ></systems-viz-next>
   </div>
   <figcaption>嵌套示例：Machine 包含 Processor 与 Memory，Core 0 跨层连接到 Memory。</figcaption>

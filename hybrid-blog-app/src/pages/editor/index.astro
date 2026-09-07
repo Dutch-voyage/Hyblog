@@ -1,14 +1,13 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import {
-  canPreviewDrafts,
   getAllEntries,
   getEntrySourcePath,
-  getPublishedEntries,
 } from "@/lib/content";
 
-const draftPreviewsEnabled = canPreviewDrafts();
-const entries = draftPreviewsEnabled ? await getAllEntries() : await getPublishedEntries();
+export const prerender = false;
+
+const entries = await getAllEntries();
 
 function yamlString(value: string) {
   return `"${value.replaceAll("\\", "\\\\").replaceAll("\"", "\\\"")}"`;
@@ -35,6 +34,8 @@ function entryToMarkdown(entry: typeof entries[number]) {
     lines.push(`updatedDate: ${entry.data.updatedDate.toISOString().slice(0, 10)}`);
   }
 
+  if (entry.data.slug) lines.push(`slug: ${yamlString(entry.data.slug)}`);
+
   if (entry.data.cover) {
     lines.push(`cover: ${yamlString(entry.data.cover)}`);
   }
@@ -52,6 +53,7 @@ const editableEntries = entries.map((entry) => ({
   collection: entry.collection,
   slug: entry.id,
   title: entry.data.title,
+  status: entry.data.status,
   sourcePath: getEntrySourcePath(entry),
   markdown: entryToMarkdown(entry),
 }));
@@ -59,7 +61,7 @@ const editableEntries = entries.map((entry) => ({
 
 <BaseLayout title="编辑工作台" description="Hybrid Blog 的内容发布、编辑和草稿预览入口。">
   <section class="hero">
-    <p class="eyebrow">Editor</p>
+    <p class="eyebrow"><a href="/editor/workspace/">Editor workspace</a> / 编辑</p>
     <h1>编辑工作台</h1>
     <p class="lede">
       内置 Markdown 编辑器会把修改提交成 GitHub Pull Request。合并 PR 后，站点才会发布对应内容。
@@ -120,7 +122,7 @@ const editableEntries = entries.map((entry) => ({
     <p class="eyebrow">Edit Mode</p>
     <h2 id="existing-edit-title">编辑已有内容</h2>
     <p>
-      从内容页面点击“编辑此页”后进入这里。保存草稿或发布都会创建/更新 GitHub PR，不会直接写入 main。
+      从内容页面点击“编辑此页”后进入这里。保存草稿或发布都会创建/更新 GitHub PR，合并并部署后生效；转为草稿或待发布后，访客将无法访问该内容。
     </p>
     <p>
       当前正在编辑：<strong id="existing-entry-title">未选择内容</strong>
@@ -161,8 +163,9 @@ const editableEntries = entries.map((entry) => ({
 
     <div class="editor-actions">
       <button id="save-existing-draft-pr" type="button" disabled>保存草稿 PR</button>
+      <button id="stage-existing-pr" type="button" disabled>暂存待发布 PR</button>
       <button id="publish-existing-pr" type="button" disabled>发布 PR</button>
-      <a href="/drafts/">草稿总览</a>
+      <a href="/editor/workspace/">内容工作台</a>
       <a href="https://app.pagescms.org/" target="_blank" rel="noreferrer">打开 Pages CMS</a>
       <a href="/editor/">新建内容</a>
       <a id="existing-pr-link" class="button-link subtle" href="#" target="_blank" rel="noreferrer" hidden>
@@ -190,6 +193,7 @@ const editableEntries = entries.map((entry) => ({
         状态
         <select id="status-field">
           <option value="draft">draft</option>
+          <option value="staged">staged</option>
           <option value="published">published</option>
         </select>
       </label>
@@ -237,8 +241,9 @@ const editableEntries = entries.map((entry) => ({
     <div class="editor-actions">
       <button id="preview-draft-output" type="button">预览</button>
       <button id="save-draft-pr" type="button" disabled>保存草稿 PR</button>
+      <button id="stage-draft-pr" type="button" disabled>暂存待发布 PR</button>
       <button id="publish-draft-pr" type="button" disabled>发布 PR</button>
-      <a href="/drafts/">草稿总览</a>
+      <a href="/editor/workspace/">内容工作台</a>
       <a href="https://app.pagescms.org/" target="_blank" rel="noreferrer">打开 Pages CMS</a>
       <a id="draft-pr-link" class="button-link subtle" href="#" target="_blank" rel="noreferrer" hidden>
         查看 PR
@@ -278,6 +283,8 @@ const editableEntries = entries.map((entry) => ({
   const output = document.getElementById("draft-output") as HTMLTextAreaElement | null;
   const previewDraftOutput = document.getElementById("preview-draft-output") as HTMLButtonElement | null;
   const saveDraftPr = document.getElementById("save-draft-pr") as HTMLButtonElement | null;
+  const stageDraftPr = document.getElementById("stage-draft-pr") as HTMLButtonElement | null;
+  const stageExistingPr = document.getElementById("stage-existing-pr") as HTMLButtonElement | null;
   const publishDraftPr = document.getElementById("publish-draft-pr") as HTMLButtonElement | null;
   const draftPreviewPanel = document.getElementById("draft-preview-panel") as HTMLElement | null;
   const draftPreviewOutput = document.getElementById("draft-preview-output");
@@ -320,6 +327,7 @@ const editableEntries = entries.map((entry) => ({
     collection: "posts" | "notes";
     slug: string;
     title: string;
+    status: "draft" | "staged" | "published";
     sourcePath: string;
     markdown: string;
   }>;
@@ -463,6 +471,8 @@ const editableEntries = entries.map((entry) => ({
   }
 
   function setButtonsEnabled(enabled: boolean) {
+    stageDraftPr?.toggleAttribute("disabled", !enabled);
+    stageExistingPr?.toggleAttribute("disabled", !enabled);
     saveExistingDraftPr?.toggleAttribute("disabled", !enabled);
     publishExistingPr?.toggleAttribute("disabled", !enabled);
     saveDraftPr?.toggleAttribute("disabled", !enabled);
@@ -536,7 +546,7 @@ const editableEntries = entries.map((entry) => ({
     } catch {
       const fallback = {
         authenticated: false,
-        error: "无法读取编辑会话。请确认本地服务运行在 Astro Node 模式。",
+        error: "无法读取 GitHub 编辑会话，请刷新页面重试。",
       };
       sessionState = fallback;
       updateAuthUi(fallback);
@@ -597,7 +607,7 @@ const editableEntries = entries.map((entry) => ({
     return null;
   }
 
-  function setMarkdownStatus(markdown: string, status: "draft" | "published") {
+  function setMarkdownStatus(markdown: string, status: "draft" | "staged" | "published") {
     const frontmatterMatch = markdown.match(/^---\s*([\s\S]*?)\s*---/);
     if (!frontmatterMatch) return markdown;
 
@@ -682,6 +692,10 @@ const editableEntries = entries.map((entry) => ({
 
     const content = data as ContentResponse;
     currentExistingBaseSha = content.sha;
+    if (saveExistingDraftPr) {
+      const published = /^status:\s*["']?published["']?\s*$/m.test(content.markdown.split(/^---\s*$/m)[1] ?? "");
+      saveExistingDraftPr.textContent = published ? "转为草稿 PR / Return to draft" : "保存草稿 PR";
+    }
     if (existingEntrySource) existingEntrySource.textContent = content.path;
     if (existingMarkdownEditor) existingMarkdownEditor.value = content.markdown;
     setNotice(markdownActionStatus, "已载入 GitHub 最新版本。");
@@ -705,6 +719,7 @@ const editableEntries = entries.map((entry) => ({
     currentExistingCollection = entry.collection;
     currentExistingSlug = entry.slug;
     if (missingEntryMessage) missingEntryMessage.hidden = true;
+    if (saveExistingDraftPr) saveExistingDraftPr.textContent = entry.status === "published" ? "转为草稿 PR / Return to draft" : "保存草稿 PR";
     if (existingEntryTitle) existingEntryTitle.textContent = entry.title;
     if (existingEntrySource) existingEntrySource.textContent = entry.sourcePath;
     if (existingMarkdownEditor) existingMarkdownEditor.value = entry.markdown;
@@ -735,7 +750,7 @@ const editableEntries = entries.map((entry) => ({
     baseSha?: string | null;
     svizJson?: string | null;
     svizAssetSlug?: string | null;
-    intent: "draft" | "publish";
+    intent: "draft" | "stage" | "publish";
     statusTarget: Element | null;
     conflictTarget: HTMLElement | null;
     linkTarget: HTMLAnchorElement | null;
@@ -779,7 +794,9 @@ const editableEntries = entries.map((entry) => ({
       }
 
       setPrLink(input.linkTarget, data.prUrl);
-      setNotice(input.statusTarget, `已创建/更新 PR：${data.paths?.join("、") ?? data.path ?? ""}`);
+      setNotice(input.statusTarget, `已创建/更新 PR。合并并完成部署后生效${input.intent === "publish" ? "，访客可见" : "，访客不可见"}。`);
+    } catch {
+      setNotice(input.statusTarget, "提交失败，请检查网络后重试。", true);
     } finally {
       setButtonsEnabled(Boolean(sessionState?.authenticated));
     }
@@ -864,6 +881,23 @@ const editableEntries = entries.map((entry) => ({
     });
   });
 
+  stageDraftPr?.addEventListener("click", () => {
+    if (!output) return;
+    output.value = setMarkdownStatus(output.value, "staged");
+    if (statusField) statusField.value = "staged";
+    submitProposal({
+      collection: collectionField?.value ?? "posts",
+      slug: slugField?.value.trim() || null,
+      markdown: output.value,
+      svizJson: currentSvizJson,
+      svizAssetSlug: currentSvizAssetSlug || null,
+      intent: "stage",
+      statusTarget: draftActionStatus,
+      conflictTarget: draftConflictMessage,
+      linkTarget: draftPrLink,
+    });
+  });
+
   publishDraftPr?.addEventListener("click", () => {
     if (!output) return;
     output.value = setMarkdownStatus(output.value, "published");
@@ -894,6 +928,24 @@ const editableEntries = entries.map((entry) => ({
       svizJson: currentSvizJson,
       svizAssetSlug: currentSvizAssetSlug || null,
       intent: "draft",
+      statusTarget: markdownActionStatus,
+      conflictTarget: existingConflictMessage,
+      linkTarget: existingPrLink,
+    });
+  });
+
+  stageExistingPr?.addEventListener("click", () => {
+    if (!existingMarkdownEditor || !currentExistingCollection) return;
+    existingMarkdownEditor.value = setMarkdownStatus(existingMarkdownEditor.value, "staged");
+    updateMarkdownPreview();
+    submitProposal({
+      collection: currentExistingCollection,
+      slug: currentExistingSlug,
+      markdown: existingMarkdownEditor.value,
+      baseSha: currentExistingBaseSha,
+      svizJson: currentSvizJson,
+      svizAssetSlug: currentSvizAssetSlug || null,
+      intent: "stage",
       statusTarget: markdownActionStatus,
       conflictTarget: existingConflictMessage,
       linkTarget: existingPrLink,

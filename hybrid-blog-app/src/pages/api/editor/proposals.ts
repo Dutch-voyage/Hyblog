@@ -31,7 +31,7 @@ export const POST: APIRoute = async ({ cookies, request }) => {
     slug?: string | null;
     markdown?: string;
     baseSha?: string | null;
-    intent?: "draft" | "publish";
+    intent?: "draft" | "stage" | "publish";
     svizJson?: string | null;
     svizAssetSlug?: string | null;
   };
@@ -42,7 +42,7 @@ export const POST: APIRoute = async ({ cookies, request }) => {
     return json({ error: "Expected a JSON request body." }, { status: 400 });
   }
 
-  if (!body.collection || !body.markdown || (body.intent !== "draft" && body.intent !== "publish")) {
+  if (!body.collection || !body.markdown || (body.intent !== "draft" && body.intent !== "stage" && body.intent !== "publish")) {
     return json({ error: "collection, markdown, and intent are required." }, { status: 400 });
   }
 

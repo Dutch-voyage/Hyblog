@@ -2,28 +2,17 @@
 import { render } from "astro:content";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import {
-  canPreviewDrafts,
   getDraftEntries,
   getEntryEditHref,
   getEntrySourcePath,
-  type BlogEntry,
 } from "@/lib/content";
 
-export const prerender = true;
+export const prerender = false;
 
-export async function getStaticPaths() {
-  if (!canPreviewDrafts()) {
-    return [];
-  }
-
-  const drafts = await getDraftEntries();
-  return drafts.map((entry) => ({
-    params: { collection: entry.collection, slug: entry.id },
-    props: { entry },
-  }));
-}
-
-const { entry } = Astro.props as { entry: BlogEntry };
+const entry = (await getDraftEntries()).find(
+  (entry) => entry.collection === Astro.params.collection && entry.id === Astro.params.slug,
+);
+if (!entry) return new Response("Not found", { status: 404 });
 const { Content } = await render(entry);
 const formattedDate = new Intl.DateTimeFormat("zh-CN", {
   dateStyle: "long",
@@ -33,13 +22,13 @@ const formattedDate = new Intl.DateTimeFormat("zh-CN", {
 <BaseLayout title={`草稿预览：${entry.data.title}`} description={entry.data.description}>
   <article class="article">
     <aside class="draft-banner">
-      <strong>Draft preview</strong>
+      <strong>{entry.data.status === "staged" ? "Staged preview" : "Draft preview"}</strong>
       <p>
-        这是草稿预览页，本地开发自动开启；构建环境仅在 <code>ENABLE_DRAFT_PREVIEWS=true</code> 时生成。
+        这是未发布内容，仅 GitHub 登录用户可见。
       </p>
       <p class="meta">源文件：<code>{getEntrySourcePath(entry)}</code></p>
       <p>
-        <a class="edit-link" href={getEntryEditHref(entry)}>编辑此草稿</a>
+        <a class="edit-link" href={getEntryEditHref(entry)}>编辑内容</a> · <a href="/editor/workspace/">返回工作台</a>
       </p>
     </aside>
 
