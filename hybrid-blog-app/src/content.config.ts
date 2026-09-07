@@ -36,14 +36,4 @@ const notes = defineCollection({
   }),
 });
 
-const demos = defineCollection({
-  loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/demos" }),
-  schema: baseContentSchema.extend({
-    type: z.literal("demo").default("demo"),
-    demoUrl: optionalUrl,
-    repositoryUrl: optionalUrl,
-    formats: z.array(z.string()).default(["demo"]),
-  }),
-});
-
-export const collections = { posts, notes, demos };
+export const collections = { posts, notes };

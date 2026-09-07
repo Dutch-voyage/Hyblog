@@ -16,7 +16,6 @@ const draftEntries = draftPreviewsEnabled ? await getDraftEntries() : [];
 const collectionLabels = {
   posts: "文章",
   notes: "笔记",
-  demos: "Demo",
 } as const;
 
 function formatDate(date: Date) {
@@ -94,7 +93,6 @@ const drafts = draftEntries.map((entry) => {
               <option value="all">全部</option>
               <option value="posts">文章</option>
               <option value="notes">笔记</option>
-              <option value="demos">Demo</option>
             </select>
           </label>
           <p id="draft-count" class="meta" aria-live="polite"></p>

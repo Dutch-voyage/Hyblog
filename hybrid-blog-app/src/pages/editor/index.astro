@@ -43,16 +43,6 @@ function entryToMarkdown(entry: typeof entries[number]) {
     lines.push(`canonicalUrl: ${yamlString(entry.data.canonicalUrl)}`);
   }
 
-  if (entry.collection === "demos") {
-    if (entry.data.demoUrl) {
-      lines.push(`demoUrl: ${yamlString(entry.data.demoUrl)}`);
-    }
-
-    if (entry.data.repositoryUrl) {
-      lines.push(`repositoryUrl: ${yamlString(entry.data.repositoryUrl)}`);
-    }
-  }
-
   lines.push("formats:", yamlList(entry.data.formats), "---", "", entry.body ?? "");
   return lines.join("\n");
 }
@@ -91,6 +81,34 @@ const editableEntries = entries.map((entry) => ({
       </a>
     </div>
   </section>
+
+  <fieldset id="sviz-import-panel" class="editor-panel sviz-import-panel">
+    <legend>添加 Demo</legend>
+    <p class="meta">
+      导入由 sviz <code>compile()</code> 生成的 JSON。提交内容 PR 时，编辑器会把 JSON 保存为站点资源。
+    </p>
+    <div class="sviz-import-actions">
+      <button id="choose-sviz-json" type="button">添加 Demo</button>
+      <input id="sviz-json-field" type="file" accept=".json,application/json" hidden />
+      <button id="clear-sviz-import" class="subtle-button" type="button" hidden>移除 Demo</button>
+    </div>
+    <p id="sviz-import-status" class="meta" aria-live="polite">尚未选择文件。</p>
+    <div id="sviz-import-details" class="sviz-import-details" hidden>
+      <label>
+        资源名称
+        <input id="sviz-asset-slug-field" type="text" placeholder="demo-asset-name" />
+      </label>
+      <label class="wide">
+        可复制的 Markdown 嵌入内容
+        <textarea id="sviz-embed-snippet" rows="12" readonly spellcheck="false"></textarea>
+      </label>
+      <div class="editor-actions wide">
+        <button id="copy-sviz-snippet" type="button">复制嵌入内容</button>
+        <button id="insert-sviz-snippet" class="subtle-button" type="button">插入当前 Markdown</button>
+      </div>
+      <div id="sviz-import-preview" class="sviz-import-preview wide"></div>
+    </div>
+  </fieldset>
 
   <section
     id="existing-edit-section"
@@ -166,7 +184,6 @@ const editableEntries = entries.map((entry) => ({
         <select id="collection-field">
           <option value="posts">文章</option>
           <option value="notes">笔记</option>
-          <option value="demos">Demo</option>
         </select>
       </label>
       <label>
@@ -204,10 +221,6 @@ const editableEntries = entries.map((entry) => ({
         格式
         <input id="formats-field" type="text" value="blog" />
       </label>
-      <label>
-        Demo URL
-        <input id="demo-url-field" type="url" placeholder="https://example.com" />
-      </label>
       <label class="wide">
         正文
         <textarea id="body-field" rows="8" placeholder="从这里开始写正文"></textarea>
@@ -244,6 +257,13 @@ const editableEntries = entries.map((entry) => ({
 <script>
   import DOMPurify from "dompurify";
   import { marked } from "marked";
+  import {
+    MAX_SVIZ_JSON_BYTES,
+    parseSvizDisplayJson,
+    renderSvizMarkdownEmbed,
+    slugifySvizAsset,
+    type SvizDisplayDocument,
+  } from "@/lib/svizImport";
 
   const collectionField = document.getElementById("collection-field") as HTMLSelectElement | null;
   const statusField = document.getElementById("status-field") as HTMLSelectElement | null;
@@ -254,7 +274,6 @@ const editableEntries = entries.map((entry) => ({
   const authorsField = document.getElementById("authors-field") as HTMLInputElement | null;
   const tagsField = document.getElementById("tags-field") as HTMLInputElement | null;
   const formatsField = document.getElementById("formats-field") as HTMLInputElement | null;
-  const demoUrlField = document.getElementById("demo-url-field") as HTMLInputElement | null;
   const bodyField = document.getElementById("body-field") as HTMLTextAreaElement | null;
   const output = document.getElementById("draft-output") as HTMLTextAreaElement | null;
   const previewDraftOutput = document.getElementById("preview-draft-output") as HTMLButtonElement | null;
@@ -265,6 +284,16 @@ const editableEntries = entries.map((entry) => ({
   const draftActionStatus = document.getElementById("draft-action-status");
   const draftConflictMessage = document.getElementById("draft-conflict-message") as HTMLElement | null;
   const draftPrLink = document.getElementById("draft-pr-link") as HTMLAnchorElement | null;
+  const chooseSvizJson = document.getElementById("choose-sviz-json") as HTMLButtonElement | null;
+  const svizJsonField = document.getElementById("sviz-json-field") as HTMLInputElement | null;
+  const clearSvizImport = document.getElementById("clear-sviz-import") as HTMLButtonElement | null;
+  const svizImportStatus = document.getElementById("sviz-import-status");
+  const svizImportDetails = document.getElementById("sviz-import-details") as HTMLElement | null;
+  const svizAssetSlugField = document.getElementById("sviz-asset-slug-field") as HTMLInputElement | null;
+  const svizEmbedSnippet = document.getElementById("sviz-embed-snippet") as HTMLTextAreaElement | null;
+  const copySvizSnippet = document.getElementById("copy-sviz-snippet") as HTMLButtonElement | null;
+  const insertSvizSnippet = document.getElementById("insert-sviz-snippet") as HTMLButtonElement | null;
+  const svizImportPreview = document.getElementById("sviz-import-preview") as HTMLElement | null;
   const createSection = document.getElementById("create-section") as HTMLElement | null;
   const existingEditSection = document.getElementById("existing-edit-section") as HTMLElement | null;
   const editableRoot = existingEditSection;
@@ -288,7 +317,7 @@ const editableEntries = entries.map((entry) => ({
 
   const editableEntries = JSON.parse(editableRoot?.dataset.editableEntries ?? "[]") as Array<{
     id: string;
-    collection: "posts" | "notes" | "demos";
+    collection: "posts" | "notes";
     slug: string;
     title: string;
     sourcePath: string;
@@ -308,7 +337,7 @@ const editableEntries = entries.map((entry) => ({
   };
 
   type ContentResponse = {
-    collection: "posts" | "notes" | "demos";
+    collection: "posts" | "notes";
     slug: string;
     path: string;
     sha: string;
@@ -316,11 +345,15 @@ const editableEntries = entries.map((entry) => ({
   };
 
   let currentEditableEntryId = "";
-  let currentExistingCollection: "posts" | "notes" | "demos" | null = null;
+  let currentExistingCollection: "posts" | "notes" | null = null;
   let currentExistingSlug = "";
   let currentExistingBaseSha: string | null = null;
   let sessionState: EditorSession | null = null;
   let slugTouched = false;
+  let currentSvizDocument: SvizDisplayDocument | null = null;
+  let currentSvizJson: string | null = null;
+  let currentSvizPreviewUrl: string | null = null;
+  let currentSvizAssetSlug = "";
 
   const today = new Date().toISOString().slice(0, 10);
   if (dateField) dateField.value = today;
@@ -338,7 +371,7 @@ const editableEntries = entries.map((entry) => ({
   }
 
   function renderYamlList(items: string[]) {
-    return items.length > 0 ? items.map((item) => `  - "${item}"`).join("\n") : "  - \"\"";
+    return items.length > 0 ? items.map((item) => `  - ${JSON.stringify(item)}`).join("\n") : '  - ""';
   }
 
   function slugify(value: string) {
@@ -349,6 +382,84 @@ const editableEntries = entries.map((entry) => ({
         .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, "-")
         .replace(/^-+|-+$/g, "") || "untitled"
     );
+  }
+
+  function clearSvizPreviewUrl() {
+    if (currentSvizPreviewUrl) URL.revokeObjectURL(currentSvizPreviewUrl);
+    currentSvizPreviewUrl = null;
+  }
+
+  function appendSvizViewer(target: Element | null, src: string, visualizationId: string) {
+    if (!target) return;
+    const viewer = document.createElement("systems-viz-next");
+    viewer.setAttribute("src", src);
+    viewer.setAttribute("visualization-id", visualizationId);
+    viewer.setAttribute("theme", "auto");
+    target.append(viewer);
+  }
+
+  function renderSvizImportPreview() {
+    if (!svizImportPreview) return;
+    svizImportPreview.replaceChildren();
+    if (!currentSvizDocument || !currentSvizPreviewUrl) return;
+    appendSvizViewer(
+      svizImportPreview,
+      currentSvizPreviewUrl,
+      currentSvizDocument.visualization_id,
+    );
+  }
+
+  function resetSvizImport() {
+    currentSvizDocument = null;
+    currentSvizJson = null;
+    currentSvizAssetSlug = "";
+    clearSvizPreviewUrl();
+    if (svizJsonField) svizJsonField.value = "";
+    if (svizAssetSlugField) svizAssetSlugField.value = "";
+    if (svizEmbedSnippet) svizEmbedSnippet.value = "";
+    clearSvizImport?.toggleAttribute("hidden", true);
+    svizImportDetails?.toggleAttribute("hidden", true);
+    setNotice(svizImportStatus, "尚未选择文件。");
+    renderSvizImportPreview();
+  }
+
+  function updateSvizSnippet() {
+    if (!svizEmbedSnippet || !currentSvizDocument) return;
+    currentSvizAssetSlug = slugifySvizAsset(
+      svizAssetSlugField?.value ?? currentSvizDocument.visualization_id,
+    );
+    if (svizAssetSlugField) svizAssetSlugField.value = currentSvizAssetSlug;
+    svizEmbedSnippet.value = renderSvizMarkdownEmbed({
+      assetSlug: currentSvizAssetSlug,
+      visualizationId: currentSvizDocument.visualization_id,
+      caption: currentSvizDocument.title,
+    });
+  }
+
+  async function importSvizFile(file: File) {
+    if (file.size > MAX_SVIZ_JSON_BYTES) {
+      throw new Error("sviz JSON 必须小于或等于 2 MiB。");
+    }
+
+    const document = parseSvizDisplayJson(await file.text());
+    const canonicalJson = `${JSON.stringify(document, null, 2)}\n`;
+    currentSvizDocument = document;
+    currentSvizJson = canonicalJson;
+    currentSvizAssetSlug = slugifySvizAsset(document.visualization_id);
+    clearSvizPreviewUrl();
+    currentSvizPreviewUrl = URL.createObjectURL(
+      new Blob([canonicalJson], { type: "application/json" }),
+    );
+
+    if (svizAssetSlugField) svizAssetSlugField.value = currentSvizAssetSlug;
+    updateSvizSnippet();
+    svizImportDetails?.toggleAttribute("hidden", false);
+    clearSvizImport?.toggleAttribute("hidden", false);
+    setNotice(
+      svizImportStatus,
+      `已载入 ${file.name} · ${document.visualization_id} · ${document.display.views.length} 个视图`,
+    );
+    renderSvizImportPreview();
   }
 
   function setButtonsEnabled(enabled: boolean) {
@@ -446,12 +557,11 @@ const editableEntries = entries.map((entry) => ({
     const tags = listFromInput(tagsField?.value ?? "");
     const formats = listFromInput(formatsField?.value ?? (collection === "notes" ? "short" : "blog"));
     const body = bodyField?.value.trim() || "Write the content here.";
-    const demoUrl = demoUrlField?.value.trim();
 
     const lines = [
       "---",
-      `title: "${title}"`,
-      `description: "${description}"`,
+      `title: ${JSON.stringify(title)}`,
+      `description: ${JSON.stringify(description)}`,
       `pubDate: ${pubDate}`,
       "authors:",
       renderYamlList(authors),
@@ -460,10 +570,6 @@ const editableEntries = entries.map((entry) => ({
       `status: "${status}"`,
     ];
 
-    if (collection === "demos" && demoUrl) {
-      lines.push(`demoUrl: "${demoUrl}"`);
-    }
-
     lines.push("formats:", renderYamlList(formats), "---", "", body);
     output.value = lines.join("\n");
     if (draftPreviewPanel && !draftPreviewPanel.hidden) updateDraftPreview();
@@ -471,6 +577,24 @@ const editableEntries = entries.map((entry) => ({
 
   function stripFrontmatter(markdown: string) {
     return markdown.replace(/^---\s*[\s\S]*?\s*---\s*/, "");
+  }
+
+  function stripSvizEmbed(markdown: string) {
+    return markdown
+      .replace(/<figure\b[^>]*class=["'][^"']*\bsviz-demo\b[^"']*["'][^>]*>[\s\S]*?<\/figure>/g, "")
+      .replace(/<script\b[^>]*src=["'][^"']*systems-viz-next\.js["'][^>]*><\/script>/g, "");
+  }
+
+  function readSvizEmbed(markdown: string) {
+    const webComponent = markdown.match(/<systems-viz-next\b[\s\S]*?<\/systems-viz-next>/)?.[0];
+    if (webComponent) {
+      const src = webComponent.match(/\bsrc=["']([^"']+)["']/)?.[1];
+      const visualizationId = webComponent.match(/\bvisualization-id=["']([^"']+)["']/)?.[1];
+      const caption = markdown.match(/<figcaption>([\s\S]*?)<\/figcaption>/)?.[1];
+      if (src && visualizationId) return { src, visualizationId, caption };
+    }
+
+    return null;
   }
 
   function setMarkdownStatus(markdown: string, status: "draft" | "published") {
@@ -488,8 +612,27 @@ const editableEntries = entries.map((entry) => ({
   function renderMarkdownPreview(markdown: string, target: Element | null) {
     if (!target) return;
 
-    const html = marked.parse(stripFrontmatter(markdown), { async: false }) as string;
+    const embed = readSvizEmbed(markdown);
+    const html = marked.parse(stripSvizEmbed(stripFrontmatter(markdown)), { async: false }) as string;
     target.innerHTML = DOMPurify.sanitize(html);
+    if (embed) {
+      const figure = document.createElement("figure");
+      figure.className = "sviz-demo";
+      const frame = document.createElement("div");
+      frame.className = "sviz-demo-frame";
+      figure.append(frame);
+      appendSvizViewer(
+        frame,
+        currentSvizPreviewUrl ?? embed.src,
+        currentSvizDocument?.visualization_id ?? embed.visualizationId,
+      );
+      if (embed.caption) {
+        const caption = document.createElement("figcaption");
+        caption.textContent = embed.caption;
+        figure.append(caption);
+      }
+      target.append(figure);
+    }
   }
 
   function updateDraftPreview() {
@@ -590,6 +733,8 @@ const editableEntries = entries.map((entry) => ({
     slug?: string | null;
     markdown: string;
     baseSha?: string | null;
+    svizJson?: string | null;
+    svizAssetSlug?: string | null;
     intent: "draft" | "publish";
     statusTarget: Element | null;
     conflictTarget: HTMLElement | null;
@@ -616,11 +761,13 @@ const editableEntries = entries.map((entry) => ({
           collection: input.collection,
           slug: input.slug,
           markdown: input.markdown,
+          svizJson: input.svizJson,
+          svizAssetSlug: input.svizAssetSlug,
           baseSha: input.baseSha,
           intent: input.intent,
         }),
       });
-      const data = (await response.json()) as { prUrl?: string; error?: string; path?: string };
+      const data = (await response.json()) as { prUrl?: string; error?: string; path?: string; paths?: string[] };
 
       if (!response.ok) {
         const message = data.error ?? "GitHub 提交失败。";
@@ -632,13 +779,56 @@ const editableEntries = entries.map((entry) => ({
       }
 
       setPrLink(input.linkTarget, data.prUrl);
-      setNotice(input.statusTarget, `已创建/更新 PR：${data.path ?? ""}`);
+      setNotice(input.statusTarget, `已创建/更新 PR：${data.paths?.join("、") ?? data.path ?? ""}`);
     } finally {
       setButtonsEnabled(Boolean(sessionState?.authenticated));
     }
   }
 
   document.getElementById("composer-form")?.addEventListener("input", updateDraft);
+  chooseSvizJson?.addEventListener("click", () => svizJsonField?.click());
+  svizJsonField?.addEventListener("change", async () => {
+    const file = svizJsonField.files?.[0];
+    if (!file) {
+      resetSvizImport();
+      return;
+    }
+    try {
+      await importSvizFile(file);
+    } catch (error) {
+      resetSvizImport();
+      setNotice(
+        svizImportStatus,
+        error instanceof Error ? error.message : "无法导入这个 sviz JSON。",
+        true,
+      );
+    }
+  });
+  clearSvizImport?.addEventListener("click", resetSvizImport);
+  svizAssetSlugField?.addEventListener("change", updateSvizSnippet);
+  copySvizSnippet?.addEventListener("click", async () => {
+    if (!svizEmbedSnippet?.value) return;
+    try {
+      await navigator.clipboard.writeText(svizEmbedSnippet.value);
+      setNotice(svizImportStatus, "嵌入内容已复制。");
+    } catch {
+      svizEmbedSnippet.select();
+      setNotice(svizImportStatus, "浏览器未允许自动复制；嵌入内容已选中，请手动复制。", true);
+    }
+  });
+  insertSvizSnippet?.addEventListener("click", () => {
+    const snippet = svizEmbedSnippet?.value;
+    if (!snippet) return;
+
+    if (existingEditSection && !existingEditSection.hidden && existingMarkdownEditor) {
+      existingMarkdownEditor.value = `${existingMarkdownEditor.value.trimEnd()}\n\n${snippet}\n`;
+      updateMarkdownPreview();
+    } else if (bodyField) {
+      bodyField.value = `${bodyField.value.trimEnd()}${bodyField.value.trim() ? "\n\n" : ""}${snippet}`;
+      updateDraft();
+    }
+    setNotice(svizImportStatus, "嵌入内容已插入当前 Markdown。提交 PR 时会同时保存 JSON 资源。");
+  });
   slugField?.addEventListener("input", () => {
     slugTouched = true;
   });
@@ -665,6 +855,8 @@ const editableEntries = entries.map((entry) => ({
       collection: collectionField?.value ?? "posts",
       slug: slugField?.value.trim() || null,
       markdown: output.value,
+      svizJson: currentSvizJson,
+      svizAssetSlug: currentSvizAssetSlug || null,
       intent: "draft",
       statusTarget: draftActionStatus,
       conflictTarget: draftConflictMessage,
@@ -681,6 +873,8 @@ const editableEntries = entries.map((entry) => ({
       collection: collectionField?.value ?? "posts",
       slug: slugField?.value.trim() || null,
       markdown: output.value,
+      svizJson: currentSvizJson,
+      svizAssetSlug: currentSvizAssetSlug || null,
       intent: "publish",
       statusTarget: draftActionStatus,
       conflictTarget: draftConflictMessage,
@@ -697,6 +891,8 @@ const editableEntries = entries.map((entry) => ({
       slug: currentExistingSlug,
       markdown: existingMarkdownEditor.value,
       baseSha: currentExistingBaseSha,
+      svizJson: currentSvizJson,
+      svizAssetSlug: currentSvizAssetSlug || null,
       intent: "draft",
       statusTarget: markdownActionStatus,
       conflictTarget: existingConflictMessage,
@@ -713,6 +909,8 @@ const editableEntries = entries.map((entry) => ({
       slug: currentExistingSlug,
       markdown: existingMarkdownEditor.value,
       baseSha: currentExistingBaseSha,
+      svizJson: currentSvizJson,
+      svizAssetSlug: currentSvizAssetSlug || null,
       intent: "publish",
       statusTarget: markdownActionStatus,
       conflictTarget: existingConflictMessage,
@@ -725,6 +923,8 @@ const editableEntries = entries.map((entry) => ({
     updateExistingEditor();
   });
 </script>
+
+<script is:inline type="module" src="/demos/sviz/systems-viz-next.js"></script>
 
 <style>
   .editor-panel {
@@ -788,6 +988,63 @@ const editableEntries = entries.map((entry) => ({
 
   .output-label {
     margin-top: 1rem;
+  }
+
+  .sviz-import-panel {
+    border: 1px solid var(--border);
+    border-radius: 0.85rem;
+    background: var(--background);
+    margin: 1.5rem 0;
+    padding: 1rem;
+  }
+
+  .sviz-import-panel legend {
+    color: var(--text);
+    font-weight: 800;
+    padding: 0 0.35rem;
+  }
+
+  .sviz-import-actions {
+    display: flex;
+    align-items: end;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .sviz-import-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .sviz-import-details[hidden] {
+    display: none;
+  }
+
+  #sviz-embed-snippet {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.82rem;
+  }
+
+  .subtle-button {
+    background: var(--surface);
+  }
+
+  .sviz-import-preview {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--surface);
+    margin-top: 1rem;
+  }
+
+  .sviz-import-preview :global(systems-viz-next),
+  .preview-surface :global(systems-viz-next) {
+    display: block;
+    width: 100%;
+    height: 680px;
+    min-height: 620px;
   }
 
   .draft-preview-panel {

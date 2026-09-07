@@ -62,7 +62,7 @@ Updated `src/content.config.ts` so CMS-authored content is less fragile:
 3. Kept `posts`, `notes`, and `demos` as separate collections.
 4. Kept status filtering through `draft` and `published`.
 
-This means an empty CMS input for `canonicalUrl`, `demoUrl`, or `repositoryUrl` will not break the Astro build.
+This means an empty CMS input for `canonicalUrl` or `repositoryUrl` will not break the Astro build.
 
 ## Authoring Workflow
 

@@ -22,6 +22,30 @@ formats:
 
 Body text.`;
 
+const articleWithDemoMarkdown = `---
+title: "Service map"
+description: "An imported sviz demo."
+pubDate: 2026-09-06
+authors:
+  - "owner"
+tags:
+  - "sviz"
+status: "draft"
+formats:
+  - "blog"
+---
+
+<systems-viz-next src="/demos/sviz/service-map.json" visualization-id="service-map" theme="auto"></systems-viz-next>`;
+
+const svizJson = JSON.stringify({
+  format: "sviz-display",
+  format_version: "0.2-draft",
+  visualization_id: "service-map",
+  title: "Service map",
+  execution: { checkpoints: [{ id: "start" }] },
+  display: { views: [{ id: "overview", kind: "spatial" }] },
+});
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -151,6 +175,66 @@ describe("editor GitHub proposals", () => {
 
     expect(result.usedFork).toBe(true);
     expect(result.repository).toBe("alice/Hyblog");
+  });
+
+  it("adds imported sviz JSON to the same branch and PR", async () => {
+    const { fetchImpl, calls } = makeFetch(({ method, url }) => {
+      if (method === "GET" && url.pathname.includes("/contents/") && url.searchParams.get("ref") === "main") {
+        return json({ message: "Not Found" }, 404);
+      }
+      if (method === "GET" && url.pathname === "/repos/Dutch-voyage/Hyblog") {
+        return json({ permissions: { push: true } });
+      }
+      if (method === "GET" && url.pathname === "/repos/Dutch-voyage/Hyblog/git/ref/heads/main") {
+        return json({ object: { sha: "base-sha" } });
+      }
+      if (method === "GET" && url.pathname.includes("/git/ref/heads/cms/owner/service-article")) {
+        return json({ message: "Not Found" }, 404);
+      }
+      if (method === "POST" && url.pathname === "/repos/Dutch-voyage/Hyblog/git/refs") {
+        return json({});
+      }
+      if (method === "GET" && url.pathname.includes("/contents/")) {
+        return json({ message: "Not Found" }, 404);
+      }
+      if (method === "PUT" && url.pathname.includes("/contents/")) {
+        return json({});
+      }
+      if (method === "GET" && url.pathname === "/repos/Dutch-voyage/Hyblog/pulls") {
+        return json([]);
+      }
+      if (method === "POST" && url.pathname === "/repos/Dutch-voyage/Hyblog/pulls") {
+        return json({ html_url: "https://github.com/Dutch-voyage/Hyblog/pull/3", number: 3, state: "open" }, 201);
+      }
+      return json({ message: `Unhandled ${method} ${url.pathname}` }, 500);
+    });
+
+    const result = await createEditorProposal(
+      {
+        token: "token",
+        login: "owner",
+        collection: "posts",
+        slug: "service-article",
+        markdown: articleWithDemoMarkdown,
+        svizJson,
+        svizAssetSlug: "service-map",
+        intent: "draft",
+      },
+      { config, fetchImpl },
+    );
+
+    const writes = calls.filter((call) => call.method === "PUT");
+    expect(writes).toHaveLength(2);
+    expect(writes.map((call) => decodeURIComponent(call.pathname))).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("hybrid-blog-app/src/content/posts/service-article.md"),
+        expect.stringContaining("hybrid-blog-app/public/demos/sviz/service-map.json"),
+      ]),
+    );
+    expect(result.paths).toEqual([
+      "hybrid-blog-app/src/content/posts/service-article.md",
+      "hybrid-blog-app/public/demos/sviz/service-map.json",
+    ]);
   });
 
   it("rejects stale existing edits", async () => {

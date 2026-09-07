@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   EditorContentError,
-  getEditorContentPath,
   prepareEditorContent,
   setMarkdownStatus,
   slugifyTitle,
@@ -34,12 +33,6 @@ describe("editor content validation", () => {
     expect(prepared.slug).toBe("hello-editor");
     expect(prepared.path).toBe("hybrid-blog-app/src/content/posts/hello-editor.md");
     expect(prepared.status).toBe("draft");
-  });
-
-  it("uses mdx for demos", () => {
-    expect(getEditorContentPath("demos", "first-demo")).toBe(
-      "hybrid-blog-app/src/content/demos/first-demo.mdx",
-    );
   });
 
   it("sets publish status before validation", () => {
@@ -79,4 +72,3 @@ describe("editor content validation", () => {
     );
   });
 });
-

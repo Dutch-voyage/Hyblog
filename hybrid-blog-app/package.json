@@ -3,11 +3,14 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "predev": "astro sync --force",
     "dev": "astro dev",
+    "prestart": "astro sync --force",
     "start": "astro dev",
     "build": "astro check && astro build",
     "preview": "astro preview",
     "check": "astro check",
+    "import:sviz": "node scripts/import-sviz-demo.mjs",
     "test": "vitest run"
   },
   "dependencies": {

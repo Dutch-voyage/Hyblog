@@ -3,13 +3,11 @@ import { getCollection, type CollectionEntry } from "astro:content";
 export const collectionPaths = {
   posts: "posts",
   notes: "notes",
-  demos: "demos",
 } as const;
 
 export type PublishedEntry =
   | CollectionEntry<"posts">
-  | CollectionEntry<"notes">
-  | CollectionEntry<"demos">;
+  | CollectionEntry<"notes">;
 
 export type BlogEntry = PublishedEntry;
 
@@ -34,8 +32,7 @@ export function canPreviewDrafts() {
 }
 
 export function getEntrySourcePath(entry: BlogEntry) {
-  const extension = entry.collection === "demos" ? "mdx" : "md";
-  return `hybrid-blog-app/src/content/${collectionPaths[entry.collection]}/${entry.id}.${extension}`;
+  return `hybrid-blog-app/src/content/${collectionPaths[entry.collection]}/${entry.id}.md`;
 }
 
 export function sortByNewest(entries: BlogEntry[]) {
@@ -43,13 +40,12 @@ export function sortByNewest(entries: BlogEntry[]) {
 }
 
 export async function getAllEntries() {
-  const [posts, notes, demos] = await Promise.all([
+  const [posts, notes] = await Promise.all([
     getCollection("posts"),
     getCollection("notes"),
-    getCollection("demos"),
   ]);
 
-  return sortByNewest([...posts, ...notes, ...demos]);
+  return sortByNewest([...posts, ...notes]);
 }
 
 export async function getPublishedEntries() {
