@@ -2,7 +2,7 @@
   "name": "hybrid-blog-deploy",
   "private": true,
   "scripts": {
-    "build": "npm --prefix hybrid-blog-app ci && npm --prefix hybrid-blog-app run build && rm -rf dist && mkdir -p dist && cp -R hybrid-blog-app/dist/client/. dist/",
+    "build": "npm --prefix hybrid-blog-app ci && npm --prefix hybrid-blog-app run build && node hybrid-blog-app/scripts/package-pages.mjs",
     "dev": "npm --prefix hybrid-blog-app run dev",
     "import:sviz": "node hybrid-blog-app/scripts/import-sviz-demo.mjs",
     "test": "npm --prefix hybrid-blog-app test"
