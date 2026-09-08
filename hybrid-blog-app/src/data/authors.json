@@ -13,7 +13,7 @@
   },
   {
     "id": "agent",
-    "name": "GPT-5.5 Cursor Agent",
+    "name": "Codex Agent",
     "role": "Initial blog builder and draft contributor",
     "bio": "Credited for the initial sample posts, demo content, CMS integration, and editorial workflow scaffolding in Hybrid Blog.",
     "links": []
