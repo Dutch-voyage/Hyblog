@@ -8,7 +8,7 @@ tags:
   - "cuda"
   - "gpu"
   - "synchronization"
-status: "draft"
+status: "published"
 formats:
   - "blog"
 ---
