@@ -1,5 +1,5 @@
 ---
-title: "CUDA 跨 Stream 同步：到底是谁在等？"
+title: "CUDA 跨 stream 的执行顺序"
 description: "cuda stream Q1。"
 pubDate: 2026-09-08
 authors:
@@ -12,9 +12,6 @@ status: "draft"
 formats:
   - "blog"
 ---
-
-**第 1 题：CUDA 跨 stream 的执行顺序**
-
 假设 copy_s 和 compute_s 是同一 GPU 上两个不同的 nonblocking stream；所有内存、事件均已正确分配，API 调用成功。transform 会读取 dst 并写入 out。
 下面是教学代码，省略初始化和错误检查：
 ```cpp
