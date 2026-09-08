@@ -8,7 +8,7 @@ tags:
   - "RL"
   - "rollout"
   - "schedule"
-status: "draft"
+status: "published"
 formats:
   - "blog"
 ---
