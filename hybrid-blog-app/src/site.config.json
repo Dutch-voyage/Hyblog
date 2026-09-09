@@ -4,8 +4,8 @@
   "author": "owner",
   "language": "zh-CN",
   "homeEyebrow": "Personal publishing lab",
-  "homeHeadline": "一个最小但可扩展的混合博客。",
-  "homeIntro": "这里先从文章、短笔记和 demo 开始，保留之后扩展到 MDX 交互内容、notebook、语音和 agent 草稿工作流的空间。",
+  "homeHeadline": "保持好奇，动手求证。",
+  "homeIntro": "A space to share ideas as they take shape—a continuous flow of notes, experiments, and discoveries.",
   "nav": [
     {
       "label": "标签",
