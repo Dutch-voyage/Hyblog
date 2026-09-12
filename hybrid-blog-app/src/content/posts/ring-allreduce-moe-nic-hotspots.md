@@ -8,7 +8,7 @@ tags:
   - "nccl"
   - "moe"
   - "networking"
-status: "draft"
+status: "published"
 formats:
   - "blog"
 ---
