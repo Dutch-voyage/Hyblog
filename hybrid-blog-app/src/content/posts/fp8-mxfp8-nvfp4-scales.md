@@ -8,7 +8,7 @@ tags:
   - "gpu"
   - "quantization"
   - "fp8"
-status: "draft"
+status: "published"
 formats:
   - "blog"
 ---
