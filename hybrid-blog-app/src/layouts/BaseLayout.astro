@@ -4,6 +4,8 @@ interface Props {
   description?: string;
 }
 
+import "katex/dist/katex.min.css";
+
 import siteConfig from "@/lib/site";
 
 const {
@@ -265,6 +267,12 @@ const pageTitle = title === siteTitle ? siteTitle : `${title} | ${siteTitle}`;
     gap: 1rem;
     padding: 0;
     list-style: none;
+  }
+
+  .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-block: 0.25rem;
   }
 
   .article {
