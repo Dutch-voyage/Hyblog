@@ -25,6 +25,8 @@ Q：在异步RL中，并行度过大或者过小会发生什么？
 
 A：并行度过大，则永远是quickest/shortest-first，并行度过小，则不能利用完全计算资源。
 
+[![shortest-bias](/figures/shortest-bias-282d4fefc33240aa-page-1.png)](/figures/shortest-bias-282d4fefc33240aa.pdf)
+
 #### 调度的目标
 
 控制并行度下，从**Scheduler**的视角来说，一个单位时间内，并行度为C，**则request产生的速度就是C**。因此效率不是优化的目标（这里的效率可以简化为并行的C个token进行decode，即一个batch，由Inference Scheduler决定，见上篇）。
