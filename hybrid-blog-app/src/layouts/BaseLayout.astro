@@ -169,6 +169,17 @@ const pageTitle = title === siteTitle ? siteTitle : `${title} | ${siteTitle}`;
     font-size: inherit;
   }
 
+  /* Shared by imported figures in article content and editor previews. */
+  img[src^="/figures/"] {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: min(100%, 640px);
+    max-height: 360px;
+    object-fit: contain;
+    margin: 1rem auto;
+  }
+
   .sviz-demo {
     width: min(920px, calc(100vw - 2rem));
     margin: 1.5rem 0 2rem;

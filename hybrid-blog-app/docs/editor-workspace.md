@@ -31,3 +31,17 @@ Insert additional demos one at a time. Every embed keeps its own URL and visuali
 Article submission sends Markdown to the existing GitHub PR flow; new demo payloads are not committed to GitHub or included in Pages assets. Existing `/demos/sviz/*.json` embeds and the CLI's local asset import remain supported. Upload URLs are public even before the article PR is merged; abandoned uploads remain in R2. There is no application file-size cap, though browser, Worker, and request limits still apply.
 
 Tests include a real compiled fixture round-trip through R2 and the shipped viewer loader, a 31 MiB upload/read, authorization, invalid JSON, independent URLs, missing storage, and conditional responses.
+
+## Save to local files
+
+When running `npm run dev` on localhost, the editor shows **保存到本地文件 / Save locally** for both new and existing entries. Existing entries load their exact Markdown from the current checkout, including unmerged PR content, rather than replacing it with GitHub's main-branch version. Local saves preserve frontmatter status and write to `hybrid-blog-app/src/content/posts/` or `notes/`. They do not commit, push, or call GitHub's PR API. The existing GitHub PR actions remain separate.
+
+The Node-only Vite middleware exposes `/__local-editor/` during development. It accepts loopback requests, uses a per-server token and same-origin checks, validates collection/slug/frontmatter, rejects symlinks, and compares file revisions before atomic writes. Conflicting saves leave editor text intact. Reload the page after reconciling outside edits. New files cannot replace an existing file without first loading its revision. Markdown saves are limited to 8 MiB; this is separate from demo uploads.
+
+The filesystem endpoint and local-save controls are unavailable in production. Local demo uploads still use the existing R2 integration (local R2 emulation in development). This action saves the article's Markdown and embedded URLs.
+
+## Local figure importer
+
+In the local editor, **添加本地图片 / Figure** accepts PNG, JPG/JPEG, and PDF. Selecting a file saves its original bytes under `hybrid-blog-app/public/figures/`, previews images (including a rendered first page for PDFs), and generates Markdown with editable alt text. Copy Markdown or Insert adds the snippet to new or existing content. Use Save locally to persist the article afterward.
+
+Images use `![description](/figures/name-hash.png)`; PDFs use `[![description](/figures/name-hash-page-1.png)](/figures/name-hash.pdf)`: the first page displays inline and opens the original PDF when clicked. Poppler (`pdftoppm`) must be on the local server PATH (`brew install poppler` on macOS). Rendering is limited to the first page at a maximum dimension of 2400 pixels and a 30-second timeout. Invalid or encrypted PDFs report an error rather than generating a broken embed. Both the PDF and its PNG preview must be included when publishing. Content hashes prevent overwriting previous figures, and repeated identical uploads reuse their path. Uploads share the local editor's loopback, token, and same-origin checks and reject unsupported file signatures. No GitHub PR is triggered. To publish, include the files in `public/figures/` along with the article; the existing Markdown-only PR action does not upload these local assets.

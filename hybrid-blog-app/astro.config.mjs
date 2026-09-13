@@ -2,6 +2,7 @@ import { defineConfig } from "astro/config";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parse } from "smol-toml";
+import { localEditorPlugin } from "./scripts/local-editor.ts";
 import cloudflare from "@astrojs/cloudflare";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
@@ -24,6 +25,7 @@ export default defineConfig({
   site: "https://example.com",
   output: "static",
   adapter: cloudflare({ configPath: fileURLToPath(runtimeConfig) }),
+  vite: { plugins: [localEditorPlugin(fileURLToPath(new URL(".", import.meta.url)))] },
   markdown: {
     remarkPlugins: [remarkMath],
     rehypePlugins: [[rehypeKatex, { trust: false }]],

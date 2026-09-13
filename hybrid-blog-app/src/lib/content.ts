@@ -55,7 +55,7 @@ export async function getDraftEntries() {
 }
 
 export function getAllTags(entries: BlogEntry[]) {
-  return Array.from(new Set(entries.flatMap((entry) => entry.data.tags))).sort((a, b) =>
+  return Array.from(new Set(entries.flatMap((entry) => entry.data.tags).filter((tag) => slugifyTag(tag) !== ""))).sort((a, b) =>
     a.localeCompare(b),
   );
 }

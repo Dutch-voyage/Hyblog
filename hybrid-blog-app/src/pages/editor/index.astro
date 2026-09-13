@@ -84,6 +84,27 @@ const editableEntries = entries.map((entry) => ({
     </div>
   </section>
 
+  <fieldset id="local-figure-panel" class="editor-panel" hidden>
+    <legend>添加本地图片 / Figure</legend>
+    <p class="meta">选择 PNG、JPEG 或 PDF，保存到本地站点资源并生成 Markdown。PDF 首页会转为图片，点击图片可打开原始 PDF。</p>
+    <button id="choose-local-figure" type="button">选择图片或 PDF</button>
+    <input id="local-figure-file" type="file" accept=".png,.jpg,.jpeg,.pdf,image/png,image/jpeg,application/pdf" hidden />
+    <p id="local-figure-status" class="meta" aria-live="polite">尚未选择文件。</p>
+    <div id="local-figure-details" hidden>
+      <label>图片说明 / Alt text
+        <input id="local-figure-caption" type="text" placeholder="描述图片内容" />
+      </label>
+      <label>Markdown
+        <textarea id="local-figure-markdown" rows="3" readonly></textarea>
+      </label>
+      <div class="editor-actions">
+        <button id="copy-local-figure" type="button">复制 Markdown</button>
+        <button id="insert-local-figure" type="button">插入当前 Markdown</button>
+      </div>
+      <div id="local-figure-preview" style="margin-top: 1rem;"></div>
+    </div>
+  </fieldset>
+
   <fieldset id="sviz-import-panel" class="editor-panel sviz-import-panel">
     <legend>添加 Demo</legend>
     <p class="meta">
@@ -162,6 +183,7 @@ const editableEntries = entries.map((entry) => ({
     </div>
 
     <div class="editor-actions">
+      <button id="save-existing-local" type="button" hidden>保存到本地文件 / Save locally</button>
       <button id="save-existing-draft-pr" type="button" disabled>保存草稿 PR</button>
       <button id="stage-existing-pr" type="button" disabled>暂存待发布 PR</button>
       <button id="publish-existing-pr" type="button" disabled>发布 PR</button>
@@ -240,6 +262,7 @@ const editableEntries = entries.map((entry) => ({
 
     <div class="editor-actions">
       <button id="preview-draft-output" type="button">预览</button>
+      <button id="save-local" type="button" hidden>保存到本地文件 / Save locally</button>
       <button id="save-draft-pr" type="button" disabled>保存草稿 PR</button>
       <button id="stage-draft-pr" type="button" disabled>暂存待发布 PR</button>
       <button id="publish-draft-pr" type="button" disabled>发布 PR</button>
@@ -261,6 +284,7 @@ const editableEntries = entries.map((entry) => ({
 
 <script>
   import DOMPurify from "dompurify";
+  import { figureMarkdown } from "@/lib/figureImport";
   import { previewMarkdown } from "@/lib/editor/markdown";
   import {
     parseSvizDisplayJson,
@@ -268,6 +292,11 @@ const editableEntries = entries.map((entry) => ({
     slugifySvizAsset,
     type SvizDisplayDocument,
   } from "@/lib/svizImport";
+
+  const saveLocalButton = document.getElementById("save-local") as HTMLButtonElement | null;
+  const saveExistingLocalButton = document.getElementById("save-existing-local") as HTMLButtonElement | null;
+  let localSession: { enabled: boolean; token: string } | null = null;
+  const localRevisions = new Map<string, string>();
 
   const collectionField = document.getElementById("collection-field") as HTMLSelectElement | null;
   const statusField = document.getElementById("status-field") as HTMLSelectElement | null;
@@ -478,8 +507,8 @@ const editableEntries = entries.map((entry) => ({
     publishExistingPr?.toggleAttribute("disabled", !enabled);
     saveDraftPr?.toggleAttribute("disabled", !enabled);
     publishDraftPr?.toggleAttribute("disabled", !enabled);
-    existingMarkdownEditor?.toggleAttribute("disabled", !enabled);
-    output?.toggleAttribute("disabled", !enabled);
+    existingMarkdownEditor?.toggleAttribute("disabled", !enabled && !localSession?.enabled);
+    output?.toggleAttribute("disabled", !enabled && !localSession?.enabled);
   }
 
   function setNotice(target: Element | null, message: string, isError = false) {
@@ -650,7 +679,25 @@ const editableEntries = entries.map((entry) => ({
   }
 
   async function fetchExistingFromGitHub(entry: ReturnType<typeof getSelectedEditableEntry>) {
-    if (!entry || !sessionState?.authenticated) return;
+    if (!entry) return;
+    if (localSession?.enabled) {
+      try {
+        const response = await fetch(`/__local-editor/content?collection=${entry.collection}&slug=${encodeURIComponent(entry.slug)}`, {
+          headers: { "x-local-editor-token": localSession.token },
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error ?? "无法读取本地文件。");
+        localRevisions.set(`${entry.collection}:${entry.slug}`, data.revision);
+        if (existingMarkdownEditor) existingMarkdownEditor.value = data.markdown;
+        if (existingEntrySource) existingEntrySource.textContent = data.path;
+        setNotice(markdownActionStatus, "已载入本地文件。保存到本地不会创建 PR。");
+        updateMarkdownPreview();
+      } catch (error) {
+        setNotice(markdownActionStatus, error instanceof Error ? error.message : "无法读取本地文件。", true);
+      }
+      return;
+    }
+    if (!sessionState?.authenticated) return;
     setNotice(markdownActionStatus, "正在从 GitHub 读取最新内容...");
 
     const response = await fetch(`/api/editor/content/${entry.collection}/${encodeURIComponent(entry.slug)}`);
@@ -735,6 +782,14 @@ const editableEntries = entries.map((entry) => ({
     setNotice(input.statusTarget, "正在提交到 GitHub...");
 
     try {
+      let baseSha = input.baseSha;
+      // Local edits use disk revisions. Resolve the GitHub base only when the
+      // user explicitly chooses a PR action, without replacing editor text.
+      if (localSession?.enabled && "baseSha" in input && input.slug) {
+        const current = await fetch(`/api/editor/content/${input.collection}/${encodeURIComponent(input.slug)}`);
+        if (current.ok) baseSha = ((await current.json()) as ContentResponse).sha;
+        else if (current.status !== 404) throw new Error("无法读取 GitHub 文件版本。");
+      }
       const response = await fetch("/api/editor/proposals", {
         method: "POST",
         headers: {
@@ -745,7 +800,7 @@ const editableEntries = entries.map((entry) => ({
           collection: input.collection,
           slug: input.slug,
           markdown: input.markdown,
-          baseSha: input.baseSha,
+          baseSha,
           intent: input.intent,
         }),
       });
@@ -971,10 +1026,144 @@ const editableEntries = entries.map((entry) => ({
     });
   });
 
-  initializeEditorMode();
-  loadSession().then(() => {
-    updateExistingEditor();
+  const figureFile = document.getElementById("local-figure-file") as HTMLInputElement;
+  const figureCaption = document.getElementById("local-figure-caption") as HTMLInputElement;
+  const figureSnippet = document.getElementById("local-figure-markdown") as HTMLTextAreaElement;
+  const figureStatus = document.getElementById("local-figure-status");
+  const figureDetails = document.getElementById("local-figure-details")!;
+  const figurePreview = document.getElementById("local-figure-preview")!;
+  const chooseFigure = document.getElementById("choose-local-figure") as HTMLButtonElement;
+  let figureSrc = "";
+  let figurePreviewSrc: string | undefined;
+  function updateFigureSnippet() {
+    figureSnippet.value = figureSrc ? figureMarkdown(figureSrc, figureCaption.value, figurePreviewSrc) : "";
+    const image = figurePreview.querySelector("img");
+    if (image) image.alt = figureCaption.value;
+  }
+  chooseFigure.addEventListener("click", () => figureFile.click());
+  figureCaption.addEventListener("input", updateFigureSnippet);
+  figureFile.addEventListener("change", async () => {
+    const file = figureFile.files?.[0];
+    if (!file || !localSession) return;
+    figureDetails.hidden = true;
+    figureSrc = "";
+    figurePreviewSrc = undefined;
+    figureSnippet.value = "";
+    figurePreview.replaceChildren();
+    chooseFigure.disabled = true;
+    figureFile.disabled = true;
+    setNotice(figureStatus, "正在保存本地图片...");
+    try {
+      const response = await fetch(`/__local-editor/figures?name=${encodeURIComponent(file.name)}`, {
+        method: "POST",
+        headers: { "x-local-editor-token": localSession.token, "content-type": "application/octet-stream" },
+        body: file,
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "保存失败，请重试。");
+      figureSrc = data.src;
+      figurePreviewSrc = data.previewSrc;
+      figureCaption.value = file.name.replace(/\.[^.]+$/, "");
+      updateFigureSnippet();
+      if (data.kind === "image" || figurePreviewSrc) {
+        const image = document.createElement("img");
+        image.src = figurePreviewSrc ?? figureSrc;
+        image.alt = figureCaption.value;
+        if (figurePreviewSrc) {
+          const link = document.createElement("a");
+          link.href = figureSrc;
+          link.target = "_blank";
+          link.rel = "noopener";
+          link.append(image);
+          figurePreview.append(link);
+        } else figurePreview.append(image);
+      } else {
+        const link = document.createElement("a");
+        link.href = figureSrc;
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.textContent = "打开 PDF 预览";
+        figurePreview.append(link);
+      }
+      figureDetails.hidden = false;
+      setNotice(figureStatus, `已保存到 ${data.path}。可复制或插入 Markdown。`);
+    } catch (error) {
+      setNotice(figureStatus, error instanceof Error ? error.message : "保存失败，请重试。", true);
+    } finally {
+      chooseFigure.disabled = false;
+      figureFile.disabled = false;
+      figureFile.value = "";
+    }
   });
+  document.getElementById("copy-local-figure")?.addEventListener("click", async () => {
+    if (!figureSnippet.value) return;
+    try {
+      await navigator.clipboard.writeText(figureSnippet.value);
+      setNotice(figureStatus, "Markdown 已复制。");
+    } catch {
+      figureSnippet.select();
+      setNotice(figureStatus, "Markdown 已选中，请手动复制。");
+    }
+  });
+  document.getElementById("insert-local-figure")?.addEventListener("click", () => {
+    const snippet = figureSnippet.value;
+    if (!snippet) return;
+    if (existingEditSection && !existingEditSection.hidden && existingMarkdownEditor) {
+      existingMarkdownEditor.value = `${existingMarkdownEditor.value.trimEnd()}\n\n${snippet}\n`;
+      updateMarkdownPreview();
+    } else if (bodyField) {
+      bodyField.value = `${bodyField.value.trimEnd()}${bodyField.value.trim() ? "\n\n" : ""}${snippet}`;
+      updateDraft();
+    }
+    setNotice(figureStatus, "图片 Markdown 已插入。点击保存到本地文件以保存文章。");
+  });
+
+  async function loadLocalSession() {
+    if (!import.meta.env.DEV) return;
+    try {
+      const response = await fetch("/__local-editor/session");
+      if (!response.ok) return;
+      const data = await response.json();
+      if (!data.enabled || !data.token) return;
+      localSession = data;
+      document.getElementById("local-figure-panel")?.removeAttribute("hidden");
+      saveLocalButton?.removeAttribute("hidden");
+      saveExistingLocalButton?.removeAttribute("hidden");
+    } catch { /* Local filesystem editing is unavailable outside astro dev. */ }
+  }
+
+  async function saveLocal(existing: boolean) {
+    if (!localSession?.enabled) return;
+    const editor = existing ? existingMarkdownEditor : output;
+    const collection = existing ? currentExistingCollection : collectionField?.value;
+    if (!editor || !collection) return;
+    const slug = existing ? currentExistingSlug : (slugField?.value.trim() || slugify(titleField?.value || "untitled"));
+    const status = existing ? markdownActionStatus : draftActionStatus;
+    const key = `${collection}:${slug}`;
+    saveLocalButton?.setAttribute("disabled", "");
+    saveExistingLocalButton?.setAttribute("disabled", "");
+    setNotice(status, "正在保存到本地文件...");
+    try {
+      const response = await fetch(`/__local-editor/content?collection=${collection}&slug=${encodeURIComponent(slug)}`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-local-editor-token": localSession.token },
+        body: JSON.stringify({ markdown: editor.value, revision: localRevisions.get(key) ?? null }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "本地保存失败。");
+      localRevisions.set(key, data.revision);
+      setNotice(status, `已保存到 ${data.path}。未创建 GitHub PR。`);
+    } catch (error) {
+      setNotice(status, error instanceof Error ? error.message : "本地保存失败，编辑内容已保留。", true);
+    } finally {
+      saveLocalButton?.removeAttribute("disabled");
+      saveExistingLocalButton?.removeAttribute("disabled");
+    }
+  }
+  saveLocalButton?.addEventListener("click", () => saveLocal(false));
+  saveExistingLocalButton?.addEventListener("click", () => saveLocal(true));
+  initializeEditorMode();
+  loadLocalSession().then(loadSession).then(updateExistingEditor);
 </script>
 
 <script is:inline type="module" src="/demos/sviz/systems-viz-next.js"></script>

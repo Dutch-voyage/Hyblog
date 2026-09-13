@@ -11,6 +11,12 @@ vi.mock("astro:content", () => ({
 import { getAllEntries, getAllTags, getDraftEntries, getPublishedEntries } from "./content";
 
 describe("content visibility", () => {
+  it("skips tags that cannot generate a non-empty route", async () => {
+    const entries = await getPublishedEntries();
+    entries[0].data.tags = ["", "   ", "---", "valid", "中文"];
+    expect(getAllTags(entries)).toEqual(["published-tag", "valid", "中文"]);
+  });
+
   it("exposes only published content to public pages, search, feeds, and tag lists", async () => {
     const entries = await getPublishedEntries();
     expect(entries.map((entry) => entry.id)).toEqual(["posts-published", "notes-published"]);
