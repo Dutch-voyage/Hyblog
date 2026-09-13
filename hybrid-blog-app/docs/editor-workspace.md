@@ -30,6 +30,12 @@ Insert additional demos one at a time. Every embed keeps its own URL and visuali
 
 Article submission sends Markdown to the existing GitHub PR flow; new demo payloads are not committed to GitHub or included in Pages assets. Existing `/demos/sviz/*.json` embeds and the CLI's local asset import remain supported. Upload URLs are public even before the article PR is merged; abandoned uploads remain in R2. There is no application file-size cap, though browser, Worker, and request limits still apply.
 
+### Publishing demos uploaded on localhost
+
+Local R2 objects are not transferred by a Git push. Before publishing content edited locally, keep the dev server running at `http://localhost:4321`, sign in once with `node hybrid-blog-app/node_modules/wrangler/bin/wrangler.js login` from the repository root, then run `npm run sync:demos`. This scans Markdown/MDX references, skips demos already available at `https://hyblog.me`, and uploads missing demos from the local server to the `DEMOS_BUCKET` bucket configured in `wrangler.toml`. It preserves the original object keys and JSON bytes, so article URLs need no edits. Every upload is read back through the production route and verified with SHA-256. Existing production objects are not overwritten. Local storage remains separate from production during ordinary editing.
+
+`npm run check:demos` performs the read-only production check without Cloudflare credentials. The root deployment build runs this check after installing dependencies and stops if referenced demo objects are unavailable. Run the sync command on the machine holding the local uploads, then retry the deployment. Sync requires Wrangler authentication (or an appropriately scoped Cloudflare API token); never commit credentials or the large JSON files. Uploading through the production editor already writes directly to production R2 and requires no local sync.
+
 Tests include a real compiled fixture round-trip through R2 and the shipped viewer loader, a 31 MiB upload/read, authorization, invalid JSON, independent URLs, missing storage, and conditional responses.
 
 ## Save to local files

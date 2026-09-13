@@ -58,7 +58,7 @@ function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function parseDisplayJson(source) {
+export function parseDisplayJson(source) {
   let document;
   try {
     document = JSON.parse(source);
@@ -174,7 +174,7 @@ async function main() {
   })}\n`);
 }
 
-main().catch((error) => {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main().catch((error) => {
   process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
   process.exitCode = 1;
 });
