@@ -6,7 +6,7 @@ authors:
   - "owner"
 tags:
   - ""
-status: "draft"
+status: "published"
 formats:
   - "blog"
 ---
@@ -22,6 +22,8 @@ Rollout中另一个重要的资源是KV cache，或者更宽泛的表述为Seque
 设计到不同的prefill-decode-tool比例，每个request有其特有的Memory特征。
 
 不过我们总是可以重新将他们分类，并使用类似的方式平衡他们的Memory Allocation。
+
+[![flat-sharp-cache](/figures/flat-sharp-cache-0163dbf8d9eb08ee-page-1.png)](/figures/flat-sharp-cache-0163dbf8d9eb08ee.pdf)
 
 **uniform**
 
