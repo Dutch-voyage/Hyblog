@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 880" role="img" aria-labelledby="title">
+<title id="title">Local registry cell bindings and model containment, grouped MoE layers</title>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#2563eb"/></marker><marker id="gray" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#64748b"/></marker></defs>
+<style>text{font-family:Arial,sans-serif;fill:#172554;font-size:16px} .label{font-family:monospace;font-size:14px} .heading{font-size:22px;font-weight:bold}</style>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="30" y="40" class="heading" text-anchor="start">Local registry — wire_components() / static MoE branch</text>
+<rect x="775" y="65" width="290" height="580" rx="12" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="795" y="95" class="" text-anchor="start">Model layers (grouped by type)</text>
+<rect x="30" y="125" width="245" height="90" rx="10" fill="#eff6ff" stroke="#93a9c6"/>
+<text x="152.5" y="164.0" class="" text-anchor="middle">attention</text>
+<text x="152.5" y="186.0" class="" text-anchor="middle">[Attention]</text>
+<rect x="30" y="350" width="245" height="195" rx="10" fill="#eff6ff" stroke="#93a9c6"/>
+<text x="152.5" y="430.5" class="" text-anchor="middle">moe_backend</text>
+<text x="152.5" y="452.5" class="" text-anchor="middle">[MoeBackend]</text>
+<text x="152.5" y="474.5" class="" text-anchor="middle">impl = ep_ll_triton</text>
+<rect x="800" y="125" width="240" height="70" rx="10" fill="#eff6ff" stroke="#93a9c6"/>
+<text x="920.0" y="154.0" class="" text-anchor="middle">layers.attention</text>
+<text x="920.0" y="176.0" class="" text-anchor="middle">[AttentionLayer]</text>
+<rect x="800" y="275" width="240" height="70" rx="10" fill="#eff6ff" stroke="#93a9c6"/>
+<text x="920.0" y="304.0" class="" text-anchor="middle">layers.DispatchEPLL</text>
+<text x="920.0" y="326.0" class="" text-anchor="middle">[DispatchEPLL]</text>
+<rect x="800" y="415" width="240" height="70" rx="10" fill="#eff6ff" stroke="#93a9c6"/>
+<text x="920.0" y="444.0" class="" text-anchor="middle">layers.ExpertsEPLL</text>
+<text x="920.0" y="466.0" class="" text-anchor="middle">[ExpertsEPLL]</text>
+<rect x="800" y="555" width="240" height="70" rx="10" fill="#eff6ff" stroke="#93a9c6"/>
+<text x="920.0" y="584.0" class="" text-anchor="middle">layers.CombineEPLL</text>
+<text x="920.0" y="606.0" class="" text-anchor="middle">[CombineEPLL]</text>
+<rect x="1120" y="360" width="250" height="90" rx="10" fill="#eff6ff" stroke="#93a9c6"/>
+<text x="1245.0" y="399.0" class="" text-anchor="middle">model</text>
+<text x="1245.0" y="421.0" class="" text-anchor="middle">[Qwen3MoeForCausalLM]</text>
+<rect x="800" y="720" width="290" height="85" rx="10" fill="#eff6ff" stroke="#93a9c6"/>
+<text x="945.0" y="756.5" class="" text-anchor="middle">model_runner [ModelRunner]</text>
+<text x="945.0" y="778.5" class="" text-anchor="middle">same shared component</text>
+<path d="M275 150 H800" fill="none" stroke="#2563eb" stroke-width="2"  marker-end="url(#arrow)"/>
+<text x="310" y="136" class="label" text-anchor="start">attn</text>
+<path d="M275 190 H740 V740 H800" fill="none" stroke="#2563eb" stroke-width="2"  marker-end="url(#arrow)"/>
+<text x="305" y="186" class="label" text-anchor="start">init_forward_metadata_capture_cuda_graph,</text>
+<text x="305" y="208" class="label" text-anchor="start">init_forward_metadata_replay_cuda_graph,</text>
+<text x="305" y="230" class="label" text-anchor="start">prepare_metadata_for_attn_decode,</text>
+<text x="305" y="252" class="label" text-anchor="start">prepare_metadata_for_attn_prefill</text>
+<path d="M275 375 H700 V310 H800" fill="none" stroke="#2563eb" stroke-width="2"  marker-end="url(#arrow)"/>
+<text x="305" y="297" class="label" text-anchor="start">hidden_recv, local_counts, original_indices,</text>
+<text x="305" y="319" class="label" text-anchor="start">recv_buf, send_buf, topk_ids_buf,</text>
+<text x="305" y="341" class="label" text-anchor="start">topk_weights_buf</text>
+<path d="M275 450 H800" fill="none" stroke="#2563eb" stroke-width="2"  marker-end="url(#arrow)"/>
+<text x="310" y="433" class="label" text-anchor="start">run_experts_ll</text>
+<path d="M275 515 H700 V590 H800" fill="none" stroke="#2563eb" stroke-width="2"  marker-end="url(#arrow)"/>
+<text x="310" y="502" class="label" text-anchor="start">rev_recv, rev_send</text>
+<path d="M150 545 V775 H800" fill="none" stroke="#2563eb" stroke-width="2"  marker-end="url(#arrow)"/>
+<text x="310" y="758" class="label" text-anchor="start">prepare_metadata_for_moe</text>
+<path d="M1040 160 H1090 V405 H1120" fill="none" stroke="#64748b" stroke-width="2"  marker-end="url(#gray)"/>
+<path d="M1040 310 H1090 V405 H1120" fill="none" stroke="#64748b" stroke-width="2"  marker-end="url(#gray)"/>
+<path d="M1040 450 H1090 V405 H1120" fill="none" stroke="#64748b" stroke-width="2"  marker-end="url(#gray)"/>
+<path d="M1040 590 H1090 V405 H1120" fill="none" stroke="#64748b" stroke-width="2"  marker-end="url(#gray)"/>
+<path d="M1245 450 V760 H1090" fill="none" stroke="#64748b" stroke-width="2"  marker-end="url(#gray)"/>
+<text x="30" y="837" class="" text-anchor="start">Blue labelled arrows: registered cells (provider → consumer). Gray unlabelled arrows: contained object → container.</text>
+<text x="30" y="861" class="" text-anchor="start">Repeated layers are grouped; this is neither an execution trace nor a rank-to-rank communication graph.</text>
+</svg>

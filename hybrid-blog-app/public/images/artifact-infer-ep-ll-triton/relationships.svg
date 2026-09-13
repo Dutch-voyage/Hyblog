@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 330" role="img" aria-labelledby="title">
+<title id="title">Orchestrator ownership and shared ModelRunner</title>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#2563eb"/></marker><marker id="gray" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#64748b"/></marker></defs>
+<style>text{font-family:Arial,sans-serif;fill:#172554;font-size:16px} .label{font-family:monospace;font-size:14px} .heading{font-size:22px;font-weight:bold}</style>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="30" y="40" class="heading" text-anchor="start">Two orchestrators, one shared ModelRunner</text>
+<rect x="30" y="85" width="255" height="70" rx="10" fill="#eff6ff" stroke="#93a9c6"/>
+<text x="157.5" y="114.0" class="" text-anchor="middle">Outer orchestrator</text>
+<text x="157.5" y="136.0" class="" text-anchor="middle">combine()</text>
+<rect x="515" y="85" width="370" height="70" rx="10" fill="#eff6ff" stroke="#93a9c6"/>
+<text x="700.0" y="114.0" class="" text-anchor="middle">ModelRunner</text>
+<text x="700.0" y="136.0" class="" text-anchor="middle">same component in both registries</text>
+<path d="M285 120 H515" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray='6 5' marker-end="url(#gray)"/>
+<text x="400" y="105" class="" text-anchor="middle">registers</text>
+<rect x="515" y="245" width="370" height="60" rx="10" fill="#eff6ff" stroke="#93a9c6"/>
+<text x="700.0" y="280.0" class="" text-anchor="middle">Local orchestrator</text>
+<path d="M700 155 V245" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray='6 5' marker-end="url(#gray)"/>
+<text x="715" y="194" class="" text-anchor="start">creates and finalizes</text>
+<text x="715" y="216" class="" text-anchor="start">ModelRunner.__init__</text>
+<text x="30" y="240" class="" text-anchor="start">Dashed arrows: ownership / setup.</text>
+<text x="30" y="262" class="" text-anchor="start">No cell injection or rank communication shown.</text>
+</svg>
