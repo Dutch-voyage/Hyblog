@@ -180,6 +180,12 @@ const pageTitle = title === siteTitle ? siteTitle : `${title} | ${siteTitle}`;
     box-shadow: 0 18px 50px color-mix(in srgb, var(--text), transparent 92%);
   }
 
+  /* Leave room for the diagram beside the viewer's 320px narrative panel. */
+  .sviz-demo.sviz-demo-rollout {
+    width: min(1200px, calc(100vw - 2rem));
+    margin-left: clamp(-140px, calc((920px - 100vw + 2rem) / 2), 0px);
+  }
+
   .sviz-demo systems-viz-next {
     display: block;
     width: 100%;
@@ -196,6 +202,11 @@ const pageTitle = title === siteTitle ? siteTitle : `${title} | ${siteTitle}`;
   }
 
   @media (max-width: 620px) {
+    .sviz-demo.sviz-demo-rollout {
+      width: 100%;
+      margin-left: 0;
+    }
+
     .sviz-demo {
       width: 100%;
     }

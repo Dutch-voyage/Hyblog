@@ -129,6 +129,9 @@ const NEXT_STYLES = String.raw`
   .tool-reset { margin-left: auto; }
   .spatial-surface, .timeline-surface { position: relative; min-width: 0; min-height: 0; }
   .spatial-surface { height: 100%; }
+  .spatial-viewport { min-width: 0; min-height: 0; overflow: auto; scrollbar-gutter: stable; }
+  .spatial-viewport > .spatial-surface { height: auto; min-height: 100%; }
+  .spatial-viewport > .spatial-surface > svg { width: 100%; height: auto; }
   .timeline-surface { width: 100%; height: 100%; }
   .pin-layer { position: absolute; inset: 0; z-index: 4; pointer-events: none; overflow: hidden; }
   .annotation-pin {
@@ -285,6 +288,22 @@ const escapeText = (value) => String(value ?? "")
   .replaceAll(">", "&gt;")
   .replaceAll('"', "&quot;");
 
+function diagramMinWidth(plan) {
+  const width = plan?.attrs?.min_diagram_width;
+  return plan?.attrs?.scale_mode === "fit-width" && typeof width === "number" && Number.isFinite(width) && width > 0 ? width : 0;
+}
+
+function spatialPlaceFill(typeColor, changed, active, isRoot, attrs = {}) {
+  const authoredOpacity = attrs.element_fill_opacity;
+  const fillPercent = typeof authoredOpacity === "number" && Number.isFinite(authoredOpacity)
+    ? clampValue(authoredOpacity, 0, 1) * 100 : 14;
+  if (changed && attrs.operation_highlight_style !== "outline")
+    return "color-mix(in srgb, #f59e0b 28%, var(--sv-panel))";
+  if (active) return "color-mix(in srgb, var(--sv-compute) 10%, var(--sv-panel))";
+  if (typeColor) return `color-mix(in srgb, ${typeColor} ${fillPercent}%, var(--sv-panel))`;
+  return isRoot ? "var(--sv-panel)" : "var(--sv-panel-soft)";
+}
+
 function safeMarkdownHref(value) {
   const href = String(value || "").replaceAll("&amp;", "&").trim();
   return /^(https?:|mailto:|#|\/|\.\.?\/)/i.test(href) ? escapeText(href) : "#";
@@ -405,6 +424,46 @@ function fitTimelineLabel(value, availableWidth, fontSize) {
   return { text: `${characters.slice(0, Math.max(3, maxCharacters - 1)).join("")}…`, fit: "truncated" };
 }
 
+// Spatial labels can use the shape's height; timeline marks keep their compact fitter.
+let shapeLabelContext;
+function fitShapeLabel(value, availableWidth, availableHeight, fontSize, measure = null) {
+  const text = String(value ?? "");
+  const lineHeight = fontSize * 1.2;
+  const maxLines = Math.max(0, Math.floor((availableHeight - fontSize) / lineHeight) + 1);
+  if (!text || availableWidth <= 0 || maxLines === 0) return { lines: [], fit: "hidden", lineHeight };
+  if (!measure) {
+    if (!shapeLabelContext && typeof document !== "undefined") shapeLabelContext = document.createElement("canvas").getContext("2d");
+    if (shapeLabelContext) shapeLabelContext.font = `650 ${fontSize}px system-ui, sans-serif`;
+    measure = shapeLabelContext
+      ? line => shapeLabelContext.measureText(line).width
+      : line => Array.from(line).reduce((width, char) => width + fontSize * (char.codePointAt(0) > 255 ? 1 : .62), 0);
+  }
+  const lines = [];
+  for (const paragraph of text.split(/\r?\n/)) {
+    let line = "";
+    for (const word of paragraph.trim().split(/\s+/).filter(Boolean)) {
+      const candidate = line ? `${line} ${word}` : word;
+      if (measure(candidate) <= availableWidth) { line = candidate; continue; }
+      if (line) { lines.push(line); line = ""; }
+      // Long identifiers and CJK text may have no whitespace break opportunity.
+      for (const char of Array.from(word)) {
+        if (line && measure(line + char) > availableWidth) { lines.push(line); line = ""; }
+        line += char;
+      }
+    }
+    lines.push(line);
+  }
+  let fit = lines.length > maxLines || lines.some(line => measure(line) > availableWidth) ? "truncated" : "full";
+  const visible = lines.slice(0, maxLines);
+  if (fit === "truncated") {
+    const chars = Array.from(visible.at(-1) || "");
+    while (chars.length && measure(chars.join("") + "…") > availableWidth) chars.pop();
+    visible[visible.length - 1] = measure("…") <= availableWidth ? chars.join("") + "…" : "";
+  }
+  if (!visible.some(Boolean)) fit = "hidden";
+  return { lines: visible, fit, lineHeight };
+}
+
 function visibleRectangle(element) {
   if (!element || element.getClientRects().length === 0) return null;
   const rect = element.getBoundingClientRect();
@@ -431,6 +490,140 @@ function rectangleContains(container, content, tolerance = 1) {
     && content.top >= container.top - tolerance
     && content.right <= container.right + tolerance
     && content.bottom <= container.bottom + tolerance;
+}
+
+function routeGraphConnection(from, to, root, spec, canvas, adjustment = { x: 0, y: 0 }) {
+  const down = spec.direction === "down";
+  const start = down
+    ? { x: from.x + from.w * spec.from_port, y: from.y + from.h + 5 }
+    : { x: from.x + from.w + 5, y: from.y + from.h * spec.from_port };
+  const end = down
+    ? { x: to.x + to.w * spec.to_port, y: to.y - 5 }
+    : { x: to.x - 5, y: to.y + to.h * spec.to_port };
+  const offsetX = Number(adjustment.x || 0) * canvas.width;
+  const offsetY = Number(adjustment.y || 0) * canvas.height;
+  if (spec.span > 1) {
+    const channel = down
+      ? root.x + root.w - 20 - spec.bypass * 28 + offsetX
+      : root.y + root.h - 20 - spec.bypass * 28 + offsetY;
+    const handle = down ? { x: channel, y: (start.y + end.y) / 2 } : { x: (start.x + end.x) / 2, y: channel };
+    return {
+      path: down
+        ? `M ${start.x} ${start.y} V ${start.y + 20} H ${channel} V ${end.y - 20} H ${end.x} V ${end.y}`
+        : `M ${start.x} ${start.y} H ${start.x + 20} V ${channel} H ${end.x - 20} V ${end.y} H ${end.x}`,
+      label: { x: handle.x + (down ? 10 : 0), y: handle.y + (down ? 0 : -10) },
+      handle, external: true, verticalLabel: down,
+    };
+  }
+  const middle = down ? (start.y + end.y) / 2 + offsetY : (start.x + end.x) / 2 + offsetX;
+  const handle = down ? { x: (start.x + end.x) / 2 + offsetX, y: middle } : { x: middle, y: (start.y + end.y) / 2 + offsetY };
+  return {
+    path: down
+      ? `M ${start.x} ${start.y} V ${middle} H ${end.x} V ${end.y}`
+      : `M ${start.x} ${start.y} H ${middle} V ${end.y} H ${end.x}`,
+    label: { x: handle.x, y: handle.y - 10 },
+    handle, external: false,
+  };
+}
+
+// A visibility graph finds the shortest polyline between buffer-side ports while
+// keeping clear of buffer bodies and container headings; shared by a view's edges.
+function shortestBufferRouter(boxes, canvas, {orthogonal = false} = {}) {
+  const clearance = 3;
+  const obstacles = boxes.map(b => ({x: b.x - clearance, y: b.y - clearance, w: b.w + 2 * clearance, h: b.h + 2 * clearance}));
+  const inside = (p, b) => p.x > b.x + .001 && p.x < b.x + b.w - .001 && p.y > b.y + .001 && p.y < b.y + b.h - .001;
+  const allowed = p => p.x >= 0 && p.y >= 0 && p.x <= canvas.width && p.y <= canvas.height && !obstacles.some(b => inside(p, b));
+  const visible = (a, z) => !obstacles.some(b => {
+    // Intersect the open rectangle, allowing a segment to run along its border.
+    let lo = 0, hi = 1;
+    for (const [axis, size] of [['x', 'w'], ['y', 'h']]) {
+      const delta = z[axis] - a[axis], min = b[axis] + .001, max = b[axis] + b[size] - .001;
+      if (Math.abs(delta) < .00001) {
+        if (a[axis] <= min || a[axis] >= max) return false;
+      } else {
+        const t1 = (min - a[axis]) / delta, t2 = (max - a[axis]) / delta;
+        lo = Math.max(lo, Math.min(t1, t2));
+        hi = Math.min(hi, Math.max(t1, t2));
+        if (lo >= hi) return false;
+      }
+    }
+    return lo < hi;
+  });
+  const corners = obstacles.flatMap(b => [
+    {x:b.x, y:b.y}, {x:b.x+b.w, y:b.y},
+    {x:b.x, y:b.y+b.h}, {x:b.x+b.w, y:b.y+b.h},
+  ]).filter(allowed);
+  const nodes = [...new Map(corners.map(p => [`${p.x},${p.y}`, p])).values()];
+  const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  const leavesPort = (p, next) => !orthogonal || p.nx === undefined ||
+    ((next.x-p.x)*p.nx + (next.y-p.y)*p.ny > .001 &&
+     Math.abs((next.x-p.x)*p.ny - (next.y-p.y)*p.nx) < .001);
+  const connection = (a, b) => {
+    if (!orthogonal || Math.abs(a.x-b.x) < .001 || Math.abs(a.y-b.y) < .001)
+      return visible(a,b) && leavesPort(a,b) && leavesPort(b,a) ? [a,b] : null;
+    for (const corner of [{x:a.x,y:b.y},{x:b.x,y:a.y}])
+      if (allowed(corner) && visible(a,corner) && visible(corner,b) && leavesPort(a,corner) && leavesPort(b,corner)) return [a,corner,b];
+    return null;
+  };
+  const addConnection = (graph, points, i, j) => {
+    const path = connection(points[i], points[j]);
+    if (!path) return;
+    const cost = path.slice(1).reduce((sum, p, k) => sum + distance(path[k], p), 0) + (orthogonal ? 8 * (path.length-1) : 0);
+    graph[i].push([j,cost,path]); graph[j].push([i,cost,[...path].reverse()]);
+  };
+  const base = nodes.map(() => []);
+  for (let i = 0; i < nodes.length; i++) for (let j = 0; j < i; j++) {
+    addConnection(base, nodes, i, j);
+  }
+  const ports = b => [
+    {x:b.x-clearance, y:b.y+b.h/2, nx:-1, ny:0}, {x:b.x+b.w+clearance, y:b.y+b.h/2, nx:1, ny:0},
+    {x:b.x+b.w/2, y:b.y-clearance, nx:0, ny:-1}, {x:b.x+b.w/2, y:b.y+b.h+clearance, nx:0, ny:1},
+  ].filter(allowed);
+  return (from, to) => {
+    const starts = ports(from), ends = ports(to);
+    if (!starts.length || !ends.length) return null;
+    const points = [...nodes, ...starts, ...ends];
+    const graph = [...base.map(edges => [...edges]), ...starts.map(() => []), ...ends.map(() => [])];
+    for (let i = nodes.length; i < points.length; i++) for (let j = 0; j < i; j++) {
+      addConnection(graph, points, i, j);
+    }
+    const costs = points.map(() => Infinity), previous = points.map(() => -1), segments = [], used = new Set();
+    starts.forEach((_, i) => { costs[nodes.length + i] = 0; });
+    let finish = -1;
+    for (let k = 0; k < points.length; k++) {
+      let at = -1;
+      for (let i = 0; i < points.length; i++) if (!used.has(i) && (at < 0 || costs[i] < costs[at])) at = i;
+      if (at < 0 || !Number.isFinite(costs[at])) break;
+      if (at >= nodes.length + starts.length) { finish = at; break; }
+      used.add(at);
+      for (const [next, cost, segment] of graph[at]) if (costs[at] + cost < costs[next]) {
+        costs[next] = costs[at] + cost; previous[next] = at; segments[next] = segment;
+      }
+    }
+    if (finish < 0) return null;
+    const path = [];
+    for (let at = finish; at >= 0; at = previous[at]) {
+      if (segments[at]) path.unshift(...segments[at].slice(1));
+      else path.unshift(points[at]);
+    }
+    // Drop redundant collinear points before drawing.
+    for (let i = path.length-2; i > 0; i--) {
+      const a=path[i-1], b=path[i], c=path[i+1];
+      if (Math.abs((b.x-a.x)*(c.y-b.y)-(b.y-a.y)*(c.x-b.x)) < .001) path.splice(i,1);
+    }
+    const totalLength = path.slice(1).reduce((sum,p,i) => sum + distance(path[i],p),0);
+    let remaining = totalLength / 2, handle = path[0];
+    for (let i = 1; i < path.length; i++) {
+      const length = distance(path[i-1], path[i]);
+      if (remaining <= length) {
+        const fraction = length ? remaining / length : 0;
+        handle = {x:path[i-1].x + fraction*(path[i].x-path[i-1].x), y:path[i-1].y + fraction*(path[i].y-path[i-1].y)};
+        break;
+      }
+      remaining -= length;
+    }
+    return {path: path.map((p, i) => `${i ? 'L' : 'M'} ${p.x} ${p.y}`).join(' '), points: path, length: totalLength, label: {x:handle.x, y:handle.y-10}, handle, external: path.length > 2};
+  };
 }
 
 function routeConnection(fromBox, toBox, obstacles, canvas, routeIndex, profileName, label, adjustment = { x: 0, y: 0 }) {
@@ -1020,7 +1213,15 @@ class SystemsVizNext extends HTMLElement {
   applyCheckpointView(reset = true) {
     const allowed = this.checkpointViewIds();
     const preferred = allowed.includes(this.checkpoint?.view) ? this.checkpoint.view : allowed[0];
-    if (reset || !["ir", "compiled", ...allowed].includes(this.view)) this.view = preferred;
+    if (!["ir", "compiled", ...allowed].includes(this.view)) {
+      // Step-specific placements may have different IDs for the same projection.
+      // Only an explicit, unambiguous key carries the reader's choice forward.
+      const key = reset ? this.activeViewPlan?.attrs?.projection_key : null;
+      const matches = typeof key === "string" && key.length
+        ? this.displayViews.filter(view => allowed.includes(view.id) && view.attrs?.projection_key === key)
+        : [];
+      this.view = matches.length === 1 ? matches[0].id : preferred;
+    }
     this.shadowRoot.querySelectorAll("[data-view]").forEach(button => {
       button.hidden = !["ir", "compiled", ...allowed].includes(button.dataset.view);
       button.setAttribute("aria-selected", String(button.dataset.view === this.view));
@@ -1143,6 +1344,7 @@ class SystemsVizNext extends HTMLElement {
   renderContentPanel() {
     const panel = this.shadowRoot.querySelector("[data-content-panel]");
     if (!panel || !this.checkpoint) return;
+    const operationKey = this.activeViewPlan?.attrs?.operation_highlights;
     const markdown = this.narrativeDrafts[this.checkpoint.id] ?? this.checkpoint.narrative ?? this.checkpoint.detail ?? "";
     const annotations = this.visibleAnnotations();
     panel.innerHTML = `
@@ -1155,6 +1357,8 @@ class SystemsVizNext extends HTMLElement {
            <div class="markdown-hint">Markdown preview</div>
            <div class="narrative-preview" data-narrative-preview>${renderMarkdown(markdown)}</div>`
         : `<div class="narrative-preview" data-narrative-preview>${renderMarkdown(markdown)}</div>`}
+      ${this.activeViewPlan?.attrs?.operation_legend ? `<div data-operation-key>${renderMarkdown(this.activeViewPlan.attrs.operation_legend)}</div>` : operationKey ? `<div data-operation-key style="font-size:12px;line-height:1.6;color:var(--sv-muted)"><span style="color:#d97706;font-weight:650">■</span> New or changing buffers<br/><span style="color:#d97706">▱</span> Dashed GPU outline: buffers released<br/>Select a buffer to trace its connections</div>` : ""}
+      ${this.activeViewPlan?.attrs?.supporting_note ? `<details data-supporting-note><summary>${escapeText(this.activeViewPlan.attrs.supporting_note_label || "More details")}</summary>${renderMarkdown(this.activeViewPlan.attrs.supporting_note)}</details>` : ""}
       <section class="annotation-section" aria-labelledby="annotation-heading">
         <div class="annotation-heading">
           <h4 id="annotation-heading">Pinned annotations</h4>
@@ -1584,7 +1788,13 @@ class SystemsVizNext extends HTMLElement {
 
     const edgeLabels = labels.filter(item => item.element.dataset.layoutLabel === "edge");
     for (const edgeLabel of edgeLabels) {
+      const route = this.activeViewPlan.routes?.find(route => route.id === edgeLabel.element.dataset.layoutOwner);
       for (const item of items) {
+        // An edge belongs inside the common container of its endpoints. Still
+        // audit its label against the container heading and every node box.
+        if (route && item.element.dataset.layoutItem === "place"
+            && isPlaceAncestor(item.element.dataset.layoutId, route.from)
+            && isPlaceAncestor(item.element.dataset.layoutId, route.to)) continue;
         if (rectangleIntersection(edgeLabel.rect, item.rect)) {
           addIssue("edge-label-overlap", "error", "Edge text overlaps a visual element", edgeLabel.element, item.element);
         }
@@ -1645,8 +1855,12 @@ class SystemsVizNext extends HTMLElement {
         this.edgeEditMode = false;
         for (const projection of projections) {
           this.view = projection;
+          this.shadowRoot.querySelectorAll("[data-panel]").forEach(panel => {
+            panel.hidden = panel.dataset.panel !== projection;
+          });
           for (const index of checkpointIndexes) {
             this.cursorIndex = index;
+            if (!this.checkpointViewIds().includes(projection)) continue;
             this.renderActivePanel();
             await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
             reports.push(this.auditCurrentLayout());
@@ -1654,6 +1868,9 @@ class SystemsVizNext extends HTMLElement {
         }
       } finally {
         Object.assign(this, saved);
+        this.shadowRoot.querySelectorAll("[data-panel]").forEach(panel => {
+          panel.hidden = panel.dataset.panel !== this.view;
+        });
         this.render();
       }
       const allIssues = reports.flatMap(report => report.issues);
@@ -1736,7 +1953,12 @@ class SystemsVizNext extends HTMLElement {
       }, null, 2);
     } else if (this.activeViewPlan?.kind === "spatial") {
       const plan = this.activeViewPlan;
-      this.shadowRoot.querySelector(`[data-panel="${CSS.escape(this.view)}"]`).innerHTML = `<div class="spatial-panel">
+      const panel = this.shadowRoot.querySelector(`[data-panel="${CSS.escape(this.view)}"]`);
+      const oldViewport = panel.querySelector('.spatial-viewport');
+      const scrollTop = oldViewport?.scrollTop || 0;
+      const scrollLeft = oldViewport?.scrollLeft || 0;
+      const fitWidth = plan.attrs?.scale_mode === "fit-width";
+      panel.innerHTML = `<div class="spatial-panel">
         <div class="spatial-toolbar" role="toolbar" aria-label="Spatial view layout controls">
           <span class="tool-label">Shape size</span>
           <button type="button" class="tool-button" data-scale-down aria-label="Make shapes smaller" ${this.shapeScale <= .7 ? "disabled" : ""}>−</button>
@@ -1746,8 +1968,20 @@ class SystemsVizNext extends HTMLElement {
           <span class="tool-help">${this.edgeEditMode ? "Drag edge handles · arrow keys adjust precisely" : "Drag headers to move · drag corners to resize"}</span>
           <button type="button" class="tool-button tool-reset" data-reset-layout>Reset layout</button>
         </div>
-        <div class="spatial-surface">${this.spatialSvg(plan)}<div class="pin-layer" aria-label="Pinned annotations"></div></div>
+        ${fitWidth ? '<div class="spatial-viewport" tabindex="0" role="region" aria-label="Scrollable diagram">' : ''}
+        <div class="spatial-surface" style="min-width:${diagramMinWidth(plan)}px">${this.spatialSvg(plan)}<div class="pin-layer" aria-label="Pinned annotations"></div></div>
+        ${fitWidth ? '</div>' : ''}
       </div>`;
+      const viewport = panel.querySelector('.spatial-viewport');
+      if (viewport) { viewport.scrollTop = scrollTop; viewport.scrollLeft = scrollLeft; }
+      this.bindPanelInteractions();
+    } else if (this.activeViewPlan?.kind === "memory_flame") {
+      const panel = this.shadowRoot.querySelector(`[data-panel="${CSS.escape(this.view)}"]`);
+      panel.innerHTML = this.memoryFlameMarkup(this.activeViewPlan);
+      panel.querySelectorAll('[data-flame-group]').forEach(button => button.addEventListener('click', () => {
+        this.memoryFlameGroup = button.dataset.flameGroup;
+        this.renderActivePanel();
+      }));
       this.bindPanelInteractions();
     } else if (this.activeViewPlan?.kind === "timeline") {
       const plan = this.activeViewPlan;
@@ -1758,23 +1992,25 @@ class SystemsVizNext extends HTMLElement {
   }
 
   bindPanelInteractions() {
-    this.shadowRoot.querySelector("[data-scale-down]")?.addEventListener("click", () => this.setShapeScale(this.shapeScale - .1));
-    this.shadowRoot.querySelector("[data-scale-up]")?.addEventListener("click", () => this.setShapeScale(this.shapeScale + .1));
-    this.shadowRoot.querySelector("[data-toggle-edge-edit]")?.addEventListener("click", () => this.toggleEdgeEditMode());
-    this.shadowRoot.querySelector("[data-reset-layout]")?.addEventListener("click", () => this.resetLayout());
-    this.shadowRoot.querySelectorAll("[data-select]").forEach(target => {
+    const panel = this.shadowRoot.querySelector(`[data-panel="${CSS.escape(this.view)}"]`);
+    if (!panel) return;
+    panel.querySelector("[data-scale-down]")?.addEventListener("click", () => this.setShapeScale(this.shapeScale - .1));
+    panel.querySelector("[data-scale-up]")?.addEventListener("click", () => this.setShapeScale(this.shapeScale + .1));
+    panel.querySelector("[data-toggle-edge-edit]")?.addEventListener("click", () => this.toggleEdgeEditMode());
+    panel.querySelector("[data-reset-layout]")?.addEventListener("click", () => this.resetLayout());
+    panel.querySelectorAll("[data-select]").forEach(target => {
       target.addEventListener("click", event => {
         event.stopPropagation();
         this.setSelection(target.dataset.select);
       });
     });
-    this.shadowRoot.querySelectorAll("[data-drag-place]").forEach(target => {
+    panel.querySelectorAll("[data-drag-place]").forEach(target => {
       target.addEventListener("pointerdown", event => this.beginDrag(event));
     });
-    this.shadowRoot.querySelectorAll("[data-resize-place]").forEach(target => {
+    panel.querySelectorAll("[data-resize-place]").forEach(target => {
       target.addEventListener("pointerdown", event => this.beginResize(event));
     });
-    this.shadowRoot.querySelectorAll("[data-drag-edge]").forEach(target => {
+    panel.querySelectorAll("[data-drag-edge]").forEach(target => {
       target.addEventListener("pointerdown", event => this.beginEdgeDrag(event));
     });
   }
@@ -1837,7 +2073,11 @@ class SystemsVizNext extends HTMLElement {
 
   profileGeometry(plan = this.activeViewPlan) {
     if (!plan || plan.kind !== "spatial") throw new Error("A spatial view is required");
-    const profileName = this.clientWidth < 620 ? "narrow" : "wide";
+    // Fit-width views must use the actual diagram width after the narrative sidebar.
+    const panelWidth = plan.attrs?.scale_mode === "fit-width"
+      ? this.shadowRoot.querySelector(`[data-panel="${CSS.escape(plan.id)}"]`)?.clientWidth
+      : null;
+    const profileName = Math.max(panelWidth || this.clientWidth, diagramMinWidth(plan)) < 620 ? "narrow" : "wide";
     const profile = plan.geometry[profileName];
     const sourcePlaces = Object.fromEntries(Object.entries(profile.places).map(([id, box]) => [id, { ...box }]));
     const places = Object.fromEntries(Object.entries(sourcePlaces).map(([id, box]) => [id, { ...box }]));
@@ -1899,6 +2139,14 @@ class SystemsVizNext extends HTMLElement {
         return groups;
       }, {});
 
+    const shortRouting = ["shortest", "orthogonal"].includes(plan.attrs?.edge_routing) && plan.routes.length
+      ? shortestBufferRouter(plan.places.filter(p => !p.hidden && places[p.id]).map(p => {
+          const box = places[p.id];
+          const children = (plan.children[p.id] || []).filter(id => !hiddenPlaces.has(id) && places[id]);
+          // Bodies of leaf buffers and title strips are obstacles, not whole GPU panels.
+          return children.length ? {...box, h: Math.max(0, Math.min(...children.map(id => places[id].y)) - box.y - 7)} : box;
+        }).filter(box => box.h > 0), geometry.canvas, {orthogonal: plan.attrs?.edge_routing === "orthogonal"})
+      : null;
     const routePaths = {};
     const routeMarkup = plan.routes.map((route, routeIndex) => {
       const from = places[route.from];
@@ -1911,23 +2159,28 @@ class SystemsVizNext extends HTMLElement {
         : transferGroup.length > 1
           ? `${route.label} · ${transferGroup.length} transfers`
           : route.label;
-      const showInlineLabel = route.from_root !== route.to_root;
-      const routed = routeConnection(from, to, obstacles, geometry.canvas, routeIndex, geometry.name, showInlineLabel ? displayLabel : "", this.edgeOffsets[route.id]);
+      const showInlineLabel = plan.attrs?.edge_labels !== false && (Boolean(route.graph) || route.from_root !== route.to_root);
+      const offset = this.edgeOffsets[route.id];
+      const shortest = shortRouting && !offset?.x && !offset?.y ? shortRouting(from, to) : null;
+      const routed = shortest || (route.graph
+        ? routeGraphConnection(from, to, places[route.from_root], route.graph, geometry.canvas, this.edgeOffsets[route.id])
+        : routeConnection(from, to, obstacles, geometry.canvas, routeIndex, geometry.name, showInlineLabel ? displayLabel : "", this.edgeOffsets[route.id]));
       routePaths[route.id] = routed;
       const active = transferGroup.length > 0;
       const isSelected = selected === route.id;
-      const isRelated = related.has(route.id);
+      const isRelated = related.has(route.id) || selected === route.from || selected === route.to;
+      const tracing = plan.routes.some(edge => selected === edge.id || selected === edge.from || selected === edge.to);
       const isEquivalence = route.semantic_role === "equivalence";
-      const color = isSelected || isRelated ? "var(--sv-selection)" : active ? "var(--sv-transfer)" : "var(--sv-muted)";
+      const color = isSelected || isRelated ? "var(--sv-selection)" : shortRouting ? "var(--sv-primary)" : active ? "var(--sv-transfer)" : "var(--sv-muted)";
       const label = displayLabel.length > 32 ? `${displayLabel.slice(0, 31)}…` : displayLabel;
       const transform = routed.verticalLabel ? ` transform="rotate(-90 ${routed.label.x} ${routed.label.y})"` : "";
-      return `<g data-edge-route="${escapeText(route.id)}" data-anchor-target="${escapeText(route.id)}" data-routing="${routed.external ? "external" : "direct"}" data-semantic-role="${escapeText(route.semantic_role || "edge")}">
+      return `<g data-edge-route="${escapeText(route.id)}" opacity="${tracing && !isSelected && !isRelated ? .12 : 1}" data-anchor-target="${escapeText(route.id)}" data-routing="${routed.external ? "external" : "direct"}" data-semantic-role="${escapeText(route.semantic_role || "edge")}">
         <title>${escapeText(displayLabel)}${active ? ` · ${escapeText(route.label)}` : ""}</title>
         <path data-edge-hit data-select="${escapeText(route.id)}" d="${routed.path}" fill="none" stroke="transparent" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
-        <path data-edge-halo data-select="${escapeText(route.id)}" d="${routed.path}" fill="none" stroke="var(--sv-panel)" stroke-width="${active ? 8 : 6}" stroke-linecap="round" stroke-linejoin="round"/>
-        <path data-select="${escapeText(route.id)}" id="route-${escapeText(route.id)}" d="${routed.path}" fill="none" stroke="${color}" stroke-width="${isSelected ? 4 : isRelated ? 3 : active ? 3 : isEquivalence ? 2.25 : 1.75}" stroke-dasharray="${isEquivalence ? "7 5" : "none"}" stroke-linecap="round" stroke-linejoin="round" ${route.directed ? `marker-end="url(#${isSelected || isRelated ? "arrow-selected" : active ? "arrow-active" : "arrow"})"` : ""}/>
+        <path data-edge-halo data-select="${escapeText(route.id)}" d="${routed.path}" fill="none" stroke="var(--sv-panel)" stroke-width="${shortRouting ? 2.5 : active ? 8 : 6}" ${shortRouting ? 'vector-effect="non-scaling-stroke"' : ""} stroke-linecap="round" stroke-linejoin="round"/>
+        <path data-select="${escapeText(route.id)}" id="route-${escapeText(route.id)}" d="${routed.path}" fill="none" stroke="${color}" stroke-width="${shortRouting ? (isSelected || isRelated ? 1.8 : 1) : isSelected ? 4 : isRelated ? 3 : active ? 3 : isEquivalence ? 2.25 : 1.75}" ${shortRouting ? 'vector-effect="non-scaling-stroke"' : ""} stroke-dasharray="${isEquivalence ? "7 5" : "none"}" stroke-linecap="round" stroke-linejoin="round" ${route.directed ? `marker-end="url(#${isSelected || isRelated ? "arrow-selected" : shortRouting ? "arrow-buffer" : active ? "arrow-active" : "arrow"}-${escapeText(plan.id)})"` : ""}/>
         <circle data-select="${escapeText(route.id)}" cx="${routed.label.x}" cy="${routed.label.y - 4}" r="14" fill="transparent" tabindex="0" role="button" aria-label="Select link ${escapeText(route.label)}"/>
-        ${showInlineLabel ? `<text class="edge-label" data-select="${escapeText(route.id)}" data-edge-label="${escapeText(route.id)}" data-layout-label="edge" data-layout-owner="${escapeText(route.id)}" x="${routed.label.x}" y="${routed.label.y}" text-anchor="middle" font-size="10" font-weight="${active ? 650 : 500}" fill="${color}"${transform}>${escapeText(label)}</text>` : ""}
+        ${showInlineLabel ? `<text class="edge-label" data-select="${escapeText(route.id)}" data-edge-label="${escapeText(route.id)}" data-layout-label="edge" data-layout-owner="${escapeText(route.id)}" x="${routed.label.x}" y="${routed.label.y}" text-anchor="middle" font-size="${route.graph ? 12 : 10}" font-weight="${active ? 650 : 500}" fill="${color}"${route.graph ? ' stroke="var(--sv-panel)" stroke-width="5" paint-order="stroke" stroke-linejoin="round"' : ""}${transform}>${escapeText(label)}</text>` : ""}
       </g>`;
     }).join("");
 
@@ -1947,6 +2200,9 @@ class SystemsVizNext extends HTMLElement {
       const box = places[place.id];
       if (!box || place.hidden || place.sizing_only) return "";
       const isRoot = plan.roots.includes(place.id);
+      const change = plan.attrs?.operation_highlights?.[place.id];
+      const released = change === "released";
+      const changed = Boolean(change) && !released;
       const active = activeStages.some(stage => stage.at === place.id);
       const rootSelected = selected === place.id;
       const relatedSelected = related.has(place.id);
@@ -1954,25 +2210,30 @@ class SystemsVizNext extends HTMLElement {
       const typeColor = typeof configuredColor === "string" && /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(configuredColor)
         ? configuredColor
         : null;
-      const stroke = rootSelected || relatedSelected ? "var(--sv-selection)" : active ? "var(--sv-compute)" : typeColor || "var(--sv-border)";
-      const fill = active
-        ? "color-mix(in srgb, var(--sv-compute) 10%, var(--sv-panel))"
-        : typeColor
-          ? `color-mix(in srgb, ${typeColor} 14%, var(--sv-panel))`
-          : isRoot ? "var(--sv-panel)" : "var(--sv-panel-soft)";
+      const stroke = rootSelected || relatedSelected ? "var(--sv-selection)" : change ? "#d97706" : active ? "var(--sv-compute)" : typeColor || "var(--sv-border)";
+      const fill = spatialPlaceFill(typeColor, changed, active, isRoot, plan.attrs);
       const drag = isRoot && plan.draggable.includes(place.id);
-      const fontSize = clampValue((isRoot ? 13 : 11) * this.shapeScale, 9, 17);
+      const authoredFont = Number(plan.attrs?.label_font_size);
+      const baseFont = Number.isFinite(authoredFont) && authoredFont > 0 ? authoredFont : (place.graph_node ? 15 : isRoot ? 13 : 11);
+      const fontSize = clampValue(baseFont * this.shapeScale, 9, Number.isFinite(authoredFont) && authoredFont > 0 ? 24 : 17);
       const labelOffset = (isRoot ? 14 : 9) * this.shapeScale;
-      const fitted = fitTimelineLabel(place.label, box.w - labelOffset - 8, fontSize);
       const shapeLabel = place.collapsed && Array.isArray(place.shape) ? `${place.shape[0]} × ${place.shape[1]}` : "";
-      const showPlaceLabel = Boolean(fitted.text) && box.h >= fontSize + 4;
-      const placeLabelY = box.y + Math.min((isRoot ? 24 : 18) * this.shapeScale, Math.max(fontSize, box.h * .7));
+      const childBoxes = plan.places.filter(child => child.parent === place.id && !child.hidden && !child.sizing_only).map(child => places[child.id]).filter(Boolean);
+      const labelTop = box.y + (isRoot ? 8 : 5) * this.shapeScale;
+      const labelBottom = childBoxes.length ? Math.min(...childBoxes.map(child => child.y)) - 4 : box.y + box.h - (shapeLabel ? 20 : 5);
+      const labelHeight = Math.max(0, labelBottom - labelTop);
+      const fitted = fitShapeLabel(place.label, box.w - labelOffset - 8, labelHeight, fontSize);
+      const showPlaceLabel = fitted.lines.some(Boolean) && box.h >= fontSize + 4;
+      const labelX = place.graph_node ? box.x + box.w / 2 : box.x + labelOffset;
+      const textHeight = fontSize + (fitted.lines.length - 1) * fitted.lineHeight;
+      const placeLabelY = labelTop + (childBoxes.length ? 0 : Math.max(0, (labelHeight - textHeight) / 2)) + fontSize * .85;
       const showShapeLabel = Boolean(shapeLabel) && box.h >= 14;
       const cardinalityLabel = shapeLabel ? ` ${shapeLabel}, ${place.cardinality} hidden elements.` : "";
-      return `<g data-select="${escapeText(place.id)}" data-anchor-target="${escapeText(place.id)}" data-element-kind="${escapeText(place.kind || "")}" data-collapsed="${place.collapsed === true}" data-cardinality="${place.cardinality || ""}" data-label-fit="${fitted.fit}" data-layout-item="place" data-layout-id="${escapeText(place.id)}" data-layout-parent="${escapeText(place.parent || "")}" tabindex="0" role="button" aria-label="${drag ? `Select or move ${escapeText(place.label)}. Use arrow keys for precise movement.${cardinalityLabel}` : `Select ${escapeText(place.label)}.${cardinalityLabel}`}" ${drag ? `data-drag-place="${escapeText(place.id)}" data-dragging="${this.dragState?.id === place.id}"` : ""}>
-        <rect data-layout-box x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="${isRoot ? 9 : 6}" fill="${fill}" stroke="${stroke}" stroke-width="${rootSelected ? 3 : relatedSelected || active ? 2 : 1}"/>
+      return `<g data-select="${escapeText(place.id)}" data-anchor-target="${escapeText(place.id)}" data-element-kind="${escapeText(place.kind || "")}" data-operation-change="${escapeText(change || "")}" data-collapsed="${place.collapsed === true}" data-cardinality="${place.cardinality || ""}" data-label-fit="${fitted.fit}" data-layout-item="place" data-layout-id="${escapeText(place.id)}" data-layout-parent="${escapeText(place.parent || "")}" tabindex="0" role="button" aria-label="${drag ? `Select or move ${escapeText(place.label)}. Use arrow keys for precise movement.${cardinalityLabel}` : `Select ${escapeText(place.label)}.${cardinalityLabel}`}" ${drag ? `data-drag-place="${escapeText(place.id)}" data-dragging="${this.dragState?.id === place.id}"` : ""}>
+        <rect data-layout-box x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="${isRoot ? 9 : 6}" fill="${fill}" stroke="${stroke}" stroke-width="${rootSelected || changed ? 3 : relatedSelected || active || released ? 2 : 1}" ${change ? `vector-effect="non-scaling-stroke" stroke-dasharray="${released ? "5 4" : "none"}"` : ""}/>
         ${isRoot ? `<rect x="${box.x}" y="${box.y}" width="4" height="${box.h}" rx="2" fill="${place.role === "storage" ? "var(--sv-primary)" : place.role === "buffer" ? "var(--sv-compute)" : "var(--sv-selection)"}"/>` : ""}
-        ${showPlaceLabel ? `<text data-layout-label="place" data-layout-owner="${escapeText(place.id)}" x="${box.x + labelOffset}" y="${placeLabelY}" font-size="${fontSize}" font-weight="650">${escapeText(fitted.text)}</text>` : ""}
+        <title>${escapeText(place.label)}${change ? ` · ${escapeText(change === "released" ? "Buffers released since previous step" : change)}` : ""}</title>
+        ${showPlaceLabel ? `<text data-layout-label="place" data-layout-owner="${escapeText(place.id)}" x="${labelX}" text-anchor="${place.graph_node ? "middle" : "start"}" y="${placeLabelY}" font-size="${fontSize}" font-weight="650">${fitted.lines.map((line, index) => `<tspan x="${labelX}" dy="${index ? fitted.lineHeight : 0}">${escapeText(line)}</tspan>`).join("")}</text>` : ""}
         ${showShapeLabel ? `<text x="${box.x + box.w - 8}" y="${box.y + box.h - 9}" text-anchor="end" font-size="9" fill="var(--sv-muted)">${escapeText(shapeLabel)}</text>` : ""}
       </g>`;
     }).join("");
@@ -2084,11 +2345,19 @@ class SystemsVizNext extends HTMLElement {
       </g>`;
     }).join("");
 
-    return `<svg viewBox="0 0 ${geometry.canvas.width} ${geometry.canvas.height}" role="img" aria-label="${escapeText(plan.label)} at ${this.checkpoint.cursor} ${escapeText(this.data.execution.unit || "step")}">
+    const fitWidth = plan.attrs?.scale_mode === "fit-width";
+    const routedPoints = Object.values(routePaths).flatMap(route => route.points || []);
+    const manualRoutes = plan.routes.some(route => this.edgeOffsets[route.id]?.x || this.edgeOffsets[route.id]?.y);
+    // Trim unused routing gutters while preserving the same horizontal scale.
+    const trimGutters = fitWidth && !manualRoutes && (!plan.routes.length || Object.values(routePaths).every(route => route.points));
+    const top = trimGutters ? Math.max(0, Math.min(...rootBoxes.map(box => box.y), ...routedPoints.map(p => p.y)) - 18) : 0;
+    const bottom = trimGutters ? Math.min(geometry.canvas.height, Math.max(...rootBoxes.map(box => box.y+box.h), ...routedPoints.map(p => p.y)) + 18) : geometry.canvas.height;
+    return `<svg viewBox="0 ${top} ${geometry.canvas.width} ${bottom-top}" role="img" aria-label="${escapeText(plan.label)} at ${this.checkpoint.cursor} ${escapeText(this.data.execution.unit || "step")}">
       <defs>
-        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--sv-muted)"/></marker>
-        <marker id="arrow-active" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--sv-transfer)"/></marker>
-        <marker id="arrow-selected" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--sv-selection)"/></marker>
+        <marker id="arrow-${escapeText(plan.id)}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--sv-muted)"/></marker>
+        <marker id="arrow-buffer-${escapeText(plan.id)}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--sv-primary)"/></marker>
+        <marker id="arrow-active-${escapeText(plan.id)}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--sv-transfer)"/></marker>
+        <marker id="arrow-selected-${escapeText(plan.id)}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--sv-selection)"/></marker>
       </defs>
       ${placeMarkup}
       <g class="edge-layer">${routeMarkup}</g>
@@ -2096,6 +2365,57 @@ class SystemsVizNext extends HTMLElement {
       <g class="moving-layer">${movingMarkup}</g>
       <g class="edge-adjust-layer">${edgeHandleMarkup}</g>
     </svg>`;
+  }
+
+  memoryFlameMarkup(plan) {
+    const time = plan.cursors[this.checkpoint.id] ?? 0;
+    const history = plan.samples.filter(sample => sample.at <= time);
+    const current = history.at(-1);
+    const group = plan.groups.find(g => g.id === this.memoryFlameGroup) || plan.groups[0];
+    const itemsAt = sample => (sample?.items || []).filter(item => item.group === group?.id);
+    const kinds = plan.components.map(c => c.id);
+    const ordered = sample => itemsAt(sample).sort((a,b) => kinds.indexOf(a.kind)-kinds.indexOf(b.kind) || a.identity.localeCompare(b.identity));
+    const total = itemsAt(current).reduce((sum,item) => sum+item.size,0);
+    const peak = Math.max(0, ...history.map(s => itemsAt(s).reduce((sum,item) => sum+item.size,0)));
+    const maximum = Math.max(10, Math.ceil(peak/10)*10);
+    const left=62, top=28, width=550, height=300, bottom=top+height;
+    const x = at => left + (time ? at/time : 0)*width;
+    const y = size => bottom - size/maximum*height;
+    const colors = Object.fromEntries(plan.components.map(c => [c.id,c.color]));
+    const bands = [];
+    history.forEach((sample,index) => {
+      const end = Math.min(time, history[index+1]?.at ?? time);
+      if(end <= sample.at) return;
+      let base=0;
+      for(const item of ordered(sample)) {
+        if(item.size>0) bands.push(`<rect data-flame-band data-start="${sample.at}" data-end="${end}" data-size="${item.size}" data-select="${escapeText(item.id)}" x="${x(sample.at)}" y="${y(base+item.size)}" width="${x(end)-x(sample.at)}" height="${item.size/maximum*height}" fill="${escapeText(colors[item.kind])}" stroke="var(--sv-panel)" stroke-width=".4" opacity="${this.selection && this.selection !== item.id ? .65 : .95}"><title>${escapeText(item.label)} · ${item.size} ${escapeText(plan.unit)} · ${sample.at}–${end} ${escapeText(plan.time_unit)}</title></rect>`);
+        base+=item.size;
+      }
+    });
+    let base=0;
+    const currentBar=ordered(current).map(item=>{
+      const rect=`<rect data-current-allocation data-size="${item.size}" x="${x(time)-2}" y="${y(base+item.size)}" width="4" height="${item.size/maximum*height}" fill="${escapeText(colors[item.kind])}"><title>Now: ${escapeText(item.label)} · ${item.size} ${escapeText(plan.unit)}</title></rect>`;
+      base+=item.size; return rect;
+    }).join('');
+    const grid=Array.from({length:5},(_,i)=>{
+      const value=maximum*i/4;
+      return `<line x1="${left}" x2="${left+width}" y1="${y(value)}" y2="${y(value)}" stroke="var(--sv-border)"/><text x="${left-9}" y="${y(value)+5}" text-anchor="end" fill="var(--sv-muted)" font-size="15">${compactNumber(value)}</text>`;
+    }).join('');
+    const ticks=Array.from({length:time?5:1},(_,i)=>{
+      const at=time*i/4;
+      return `<text x="${x(at)}" y="${bottom+26}" text-anchor="middle" font-size="15" fill="var(--sv-muted)">${Number(at.toFixed(2))}</text>`;
+    }).join('');
+    return `<div class="memory-flame-panel" style="padding:16px;overflow:auto;height:100%;box-sizing:border-box">
+      <div role="group" aria-label="Memory history GPU" style="display:flex;gap:6px;flex-wrap:wrap">${plan.groups.map(g=>`<button class="tool-button" data-flame-group="${escapeText(g.id)}" aria-pressed="${g.id===group?.id}">${escapeText(g.label)}</button>`).join('')}</div>
+      <p style="font-size:14px"><strong>${total} ${escapeText(plan.unit)}</strong> now · ${peak} peak observed · 0–${time} ${escapeText(plan.time_unit)}</p>
+      <svg data-memory-flame data-current-time="${time}" data-current-total="${total}" viewBox="0 0 640 390" style="width:100%;height:auto;min-height:0" role="img" aria-label="${escapeText(group?.label || 'Memory')} allocations from 0 to ${time} ${escapeText(plan.time_unit)}">
+        <text x="${left}" y="16" font-size="15" fill="var(--sv-muted)">${escapeText(plan.unit)}</text>${grid}${bands.join('')}${currentBar}${ticks}
+        <text x="${left+width/2}" y="${bottom+54}" font-size="15" text-anchor="middle" fill="var(--sv-muted)">Time (${escapeText(plan.time_unit)})</text>
+        ${!time?`<text x="${left+width/2}" y="${top+height/2}" text-anchor="middle" font-size="17" fill="var(--sv-muted)">Initial allocations at t = 0</text>`:''}
+      </svg>
+      <div style="display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px">${plan.components.map(c=>`<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${escapeText(c.color)};margin-right:5px"></span>${escapeText(c.label)}</span>`).join('')}</div>
+      <p style="font-size:12px;color:var(--sv-muted)">Recorded memory snapshots; sizes held until the next step. Hover a band for its allocation.</p>
+    </div>`;
   }
 
   timelineSvg(plan = this.activeViewPlan) {
