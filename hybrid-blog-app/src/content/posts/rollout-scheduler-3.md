@@ -23,15 +23,15 @@ RL与SFT/PT最本质的不同（之一）是，组成训练的batch时从实际�
 
 #### bucket是目标，frontier是决策。
 
-长度的基本单位规定为一个chunk。
-bucket是目标分布，如(B1, B2, B4, B8) = (3, 3, 3, 3)。
-frontier是request所处的状态，如f4指的是一个request完成了4个chunk。
+长度的基本单位规定为一个 chunk。Bucket 描述最终完成长度：$B_1$ 为 $L=1$，$B_2$ 为 $1<L\leq2$，$B_4$ 为 $2<L\leq4$，$B_8$ 为 $4<L\leq8$；本例的目标完成数为 $(3,3,3,3)$。
 
-可以想象得到，对于某个frontier f，存在一个概率p，在下一个frontier前完成并落入B_f，同时有（1-p）的概率进入下一个frontier。
+下图中给了一个简单的例子
 
-在这些状态约束下，**控制了frontier的分布，等同于控制bucket的分布**。
+1. **Release**：F/G/H/I 保持已有 grant，J/K/L/M 在 $f_4$ 释放四个 lane；resident 中 N 在 $f_1$、O 在 $f_2$、P/Q 在 $f_4$。
+2. **Plan**：已观察到的 EOS 完成数为 $(3,1,1,0)$，欠额为 $(0,2,2,3)$；乘以平均总服务量 $(1,2,4,8)$ 得到权重 $(0,4,8,24)$，按最大余数法分配八个 lane 得到目标 $(0,1,2,5)$，扣除冻结 grant $(0,1,1,2)$ 后，本轮需要新增 $(0,0,1,3)$。
+3. **Apply**：O 获得到 $f_4$ 的 grant，J/P/Q 获得到 $f_8$ 的 grant，实际 mix 为 $(0,1,2,5)$，没有 supply miss 或 spill；N 留在 resident，因为冻结的 F 已满足 $f_2$ 的目标数量。
 
-<figure class="sviz-demo">
+<figure class="sviz-demo sviz-demo-rollout">
   <div class="sviz-demo-frame">
     <systems-viz-next
       src="/demos/sviz/frontier-scheduler-example.json"
@@ -39,7 +39,7 @@ frontier是request所处的状态，如f4指的是一个request完成了4个chun
       theme="auto"
     ></systems-viz-next>
   </div>
-  <figcaption>Debt → frontier grants → requests</figcaption>
+  <figcaption>同一次决策的 Release → Plan → Apply：只分配四个释放的 lane；O 补齐到 f_4 的 grant，J/P/Q 获得到 f_8 的 grant，实际 mix 为 (0,1,2,5)，无供给缺口或溢出。</figcaption>
 </figure>
 <script type="module" src="/demos/sviz/systems-viz-next.js"></script>
 
