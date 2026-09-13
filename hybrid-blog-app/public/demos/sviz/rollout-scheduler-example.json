@@ -2,14 +2,14 @@
   "format": "sviz-display",
   "format_version": "0.2-draft",
   "visualization_id": "rollout-scheduler-example",
-  "base_revision": "sha256:984e332521b25714e1e2def15749fbd7aacb58c51017e7d0093fb1a61a7f13c5",
+  "base_revision": "sha256:1d75959c43bb0e2a2db4eb5eefb8104edc4c65cc8c1138ea82660463eea9b935",
   "title": "Length-aware rollout lane allocation",
-  "description": "A 1:1 submission mix becomes completion-skewed when short requests turn over faster. Length-aware lane allocation restores a 1:1 completion mix at barrier B=12. Dark blocks are completed; pale blocks are still active at the barrier frontier. Each case also has a bucket projection linked by request identity.",
+  "description": "8 lanes · first 12 completions · two allocation policies",
   "source": {
     "version": "0.2-draft",
     "id": "rollout-scheduler-example",
     "title": "Length-aware rollout lane allocation",
-    "description": "A 1:1 submission mix becomes completion-skewed when short requests turn over faster. Length-aware lane allocation restores a 1:1 completion mix at barrier B=12. Dark blocks are completed; pale blocks are still active at the barrier frontier. Each case also has a bucket projection linked by request identity.",
+    "description": "8 lanes · first 12 completions · two allocation policies",
     "time": {
       "mode": "steps"
     },
@@ -27,6 +27,7 @@
         "tags": {},
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -41,6 +42,7 @@
         "tags": {},
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -56,6 +58,7 @@
         "tags": {},
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -70,6 +73,7 @@
         "tags": {},
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -86,6 +90,7 @@
         "parent": "submission-balanced.summary",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -102,6 +107,7 @@
         "parent": "submission-balanced.s1",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -118,6 +124,7 @@
         "parent": "submission-balanced.l4",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -134,6 +141,7 @@
         "parent": "submission-balanced.l9",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -150,6 +158,7 @@
         "parent": "submission-balanced.l1",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -166,6 +175,7 @@
         "parent": "submission-balanced.s2",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -182,6 +192,7 @@
         "parent": "submission-balanced.l5",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -198,6 +209,7 @@
         "parent": "submission-balanced.l2",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -214,6 +226,7 @@
         "parent": "submission-balanced.s3",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -230,6 +243,7 @@
         "parent": "submission-balanced.s7",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -246,6 +260,7 @@
         "parent": "submission-balanced.s9",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -262,6 +277,7 @@
         "parent": "submission-balanced.l7",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -278,6 +294,7 @@
         "parent": "submission-balanced.s4",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -294,6 +311,7 @@
         "parent": "submission-balanced.s8",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -310,6 +328,7 @@
         "parent": "submission-balanced.l8",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -326,6 +345,7 @@
         "parent": "submission-balanced.s5",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -342,6 +362,7 @@
         "parent": "submission-balanced.s6",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -358,6 +379,7 @@
         "parent": "submission-balanced.l6",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -374,6 +396,7 @@
         "parent": "submission-balanced.l3",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -390,6 +413,7 @@
         "parent": "submission-balanced.l10",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -406,6 +430,7 @@
         "parent": "submission-balanced.bucket-groups.short.submission-balanced.s1",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -422,6 +447,7 @@
         "parent": "submission-balanced.bucket-groups.short.submission-balanced.s2",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -438,6 +464,7 @@
         "parent": "submission-balanced.bucket-groups.short.submission-balanced.s3",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -454,6 +481,7 @@
         "parent": "submission-balanced.bucket-groups.short.submission-balanced.s7",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -470,6 +498,7 @@
         "parent": "submission-balanced.bucket-groups.short.submission-balanced.s9",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -486,6 +515,7 @@
         "parent": "submission-balanced.bucket-groups.short.submission-balanced.s4",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -502,6 +532,7 @@
         "parent": "submission-balanced.bucket-groups.short.submission-balanced.s8",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -518,6 +549,7 @@
         "parent": "submission-balanced.bucket-groups.short.submission-balanced.s5",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -534,6 +566,7 @@
         "parent": "submission-balanced.bucket-groups.short.submission-balanced.s6",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -550,6 +583,7 @@
         "parent": "submission-balanced.bucket-groups.long.submission-balanced.l4",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -566,6 +600,7 @@
         "parent": "submission-balanced.bucket-groups.long.submission-balanced.l9",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -582,6 +617,7 @@
         "parent": "submission-balanced.bucket-groups.long.submission-balanced.l1",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -598,6 +634,7 @@
         "parent": "submission-balanced.bucket-groups.long.submission-balanced.l5",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -614,6 +651,7 @@
         "parent": "submission-balanced.bucket-groups.long.submission-balanced.l2",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -630,6 +668,7 @@
         "parent": "submission-balanced.bucket-groups.long.submission-balanced.l7",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -646,6 +685,7 @@
         "parent": "submission-balanced.bucket-groups.long.submission-balanced.l8",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -662,6 +702,7 @@
         "parent": "submission-balanced.bucket-groups.long.submission-balanced.l6",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -678,6 +719,7 @@
         "parent": "submission-balanced.bucket-groups.long.submission-balanced.l3",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -694,6 +736,7 @@
         "parent": "submission-balanced.bucket-groups.long.submission-balanced.l10",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -710,6 +753,7 @@
         "parent": "length-aware.summary",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -726,6 +770,7 @@
         "parent": "length-aware.s1",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -742,6 +787,7 @@
         "parent": "length-aware.s2",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -758,6 +804,7 @@
         "parent": "length-aware.s3",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -774,6 +821,7 @@
         "parent": "length-aware.s4",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -790,6 +838,7 @@
         "parent": "length-aware.s5",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -806,6 +855,7 @@
         "parent": "length-aware.s6",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -822,6 +872,7 @@
         "parent": "length-aware.s7",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -838,6 +889,7 @@
         "parent": "length-aware.l1",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -854,6 +906,7 @@
         "parent": "length-aware.l2",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -870,6 +923,7 @@
         "parent": "length-aware.l3",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -886,6 +940,7 @@
         "parent": "length-aware.l5",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -902,6 +957,7 @@
         "parent": "length-aware.l6",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -918,6 +974,7 @@
         "parent": "length-aware.l7",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -934,6 +991,7 @@
         "parent": "length-aware.l8",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -950,6 +1008,7 @@
         "parent": "length-aware.l9",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -966,6 +1025,7 @@
         "parent": "length-aware.l10",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -982,6 +1042,7 @@
         "parent": "length-aware.l11",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -998,6 +1059,7 @@
         "parent": "length-aware.l12",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1014,6 +1076,7 @@
         "parent": "length-aware.bucket-groups.short.length-aware.s1",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1030,6 +1093,7 @@
         "parent": "length-aware.bucket-groups.short.length-aware.s2",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1046,6 +1110,7 @@
         "parent": "length-aware.bucket-groups.short.length-aware.s3",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1062,6 +1127,7 @@
         "parent": "length-aware.bucket-groups.short.length-aware.s4",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1078,6 +1144,7 @@
         "parent": "length-aware.bucket-groups.short.length-aware.s5",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1094,6 +1161,7 @@
         "parent": "length-aware.bucket-groups.short.length-aware.s6",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1110,6 +1178,7 @@
         "parent": "length-aware.bucket-groups.short.length-aware.s7",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1126,6 +1195,7 @@
         "parent": "length-aware.bucket-groups.long.length-aware.l1",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1142,6 +1212,7 @@
         "parent": "length-aware.bucket-groups.long.length-aware.l2",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1158,6 +1229,7 @@
         "parent": "length-aware.bucket-groups.long.length-aware.l3",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1174,6 +1246,7 @@
         "parent": "length-aware.bucket-groups.long.length-aware.l5",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1190,6 +1263,7 @@
         "parent": "length-aware.bucket-groups.long.length-aware.l6",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1206,6 +1280,7 @@
         "parent": "length-aware.bucket-groups.long.length-aware.l7",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1222,6 +1297,7 @@
         "parent": "length-aware.bucket-groups.long.length-aware.l8",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1238,6 +1314,7 @@
         "parent": "length-aware.bucket-groups.long.length-aware.l9",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1254,6 +1331,7 @@
         "parent": "length-aware.bucket-groups.long.length-aware.l10",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1270,6 +1348,7 @@
         "parent": "length-aware.bucket-groups.long.length-aware.l11",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1286,6 +1365,7 @@
         "parent": "length-aware.bucket-groups.long.length-aware.l12",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1298,6 +1378,7 @@
         "parent": "submission-balanced.figure",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1310,6 +1391,7 @@
         "parent": "submission-balanced.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1327,6 +1409,7 @@
         "parent": "submission-balanced.lane-1",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1344,6 +1427,7 @@
         "parent": "submission-balanced.lane-1",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1361,6 +1445,7 @@
         "parent": "submission-balanced.lane-1",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1373,6 +1458,7 @@
         "parent": "submission-balanced.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1390,6 +1476,7 @@
         "parent": "submission-balanced.lane-2",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1402,6 +1489,7 @@
         "parent": "submission-balanced.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1419,6 +1507,7 @@
         "parent": "submission-balanced.lane-3",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1436,6 +1525,7 @@
         "parent": "submission-balanced.lane-3",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1448,6 +1538,7 @@
         "parent": "submission-balanced.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1465,6 +1556,7 @@
         "parent": "submission-balanced.lane-4",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1477,6 +1569,7 @@
         "parent": "submission-balanced.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1494,6 +1587,7 @@
         "parent": "submission-balanced.lane-5",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1511,6 +1605,7 @@
         "parent": "submission-balanced.lane-5",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1528,6 +1623,7 @@
         "parent": "submission-balanced.lane-5",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1545,6 +1641,7 @@
         "parent": "submission-balanced.lane-5",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1557,6 +1654,7 @@
         "parent": "submission-balanced.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1574,6 +1672,7 @@
         "parent": "submission-balanced.lane-6",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1591,6 +1690,7 @@
         "parent": "submission-balanced.lane-6",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1608,6 +1708,7 @@
         "parent": "submission-balanced.lane-6",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1620,6 +1721,7 @@
         "parent": "submission-balanced.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1637,6 +1739,7 @@
         "parent": "submission-balanced.lane-7",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1654,6 +1757,7 @@
         "parent": "submission-balanced.lane-7",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1671,6 +1775,7 @@
         "parent": "submission-balanced.lane-7",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1683,6 +1788,7 @@
         "parent": "submission-balanced.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1700,6 +1806,7 @@
         "parent": "submission-balanced.lane-8",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1717,25 +1824,27 @@
         "parent": "submission-balanced.lane-8",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
         "id": "submission-balanced.bucket-groups",
         "label": "Bucket projection",
         "attrs": {
-          "rule": "group request where request.request_kind == bucket key",
           "dsl_container": "bucket-set",
+          "rule": "group request where request.request_kind == bucket key",
           "dsl_kind": "object"
         },
         "tags": {},
         "parent": "submission-balanced.bucket-plane",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
         "id": "submission-balanced.bucket-groups.short",
-        "label": "Short bucket · 9 completed / 9 total",
+        "label": "Short bucket · 9/9 done",
         "attrs": {
           "dsl_container": "bucket",
           "bucket_key": "short",
@@ -1746,6 +1855,7 @@
         "parent": "submission-balanced.bucket-groups",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1767,6 +1877,7 @@
         "parent": "submission-balanced.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1788,6 +1899,7 @@
         "parent": "submission-balanced.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1809,6 +1921,7 @@
         "parent": "submission-balanced.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1830,6 +1943,7 @@
         "parent": "submission-balanced.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1851,6 +1965,7 @@
         "parent": "submission-balanced.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1872,6 +1987,7 @@
         "parent": "submission-balanced.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1893,6 +2009,7 @@
         "parent": "submission-balanced.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1914,6 +2031,7 @@
         "parent": "submission-balanced.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1935,11 +2053,12 @@
         "parent": "submission-balanced.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
         "id": "submission-balanced.bucket-groups.long",
-        "label": "Long bucket · 3 completed / 10 total",
+        "label": "Long bucket · 3/10 done",
         "attrs": {
           "dsl_container": "bucket",
           "bucket_key": "long",
@@ -1950,6 +2069,7 @@
         "parent": "submission-balanced.bucket-groups",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1971,6 +2091,7 @@
         "parent": "submission-balanced.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -1992,6 +2113,7 @@
         "parent": "submission-balanced.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2013,6 +2135,7 @@
         "parent": "submission-balanced.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2034,6 +2157,7 @@
         "parent": "submission-balanced.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2055,6 +2179,7 @@
         "parent": "submission-balanced.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2076,6 +2201,7 @@
         "parent": "submission-balanced.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2097,6 +2223,7 @@
         "parent": "submission-balanced.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2118,6 +2245,7 @@
         "parent": "submission-balanced.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2139,6 +2267,7 @@
         "parent": "submission-balanced.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2160,6 +2289,7 @@
         "parent": "submission-balanced.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2172,6 +2302,7 @@
         "parent": "length-aware.figure",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2184,6 +2315,7 @@
         "parent": "length-aware.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2201,6 +2333,7 @@
         "parent": "length-aware.lane-1",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2218,6 +2351,7 @@
         "parent": "length-aware.lane-1",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2235,6 +2369,7 @@
         "parent": "length-aware.lane-1",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2252,6 +2387,7 @@
         "parent": "length-aware.lane-1",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2264,6 +2400,7 @@
         "parent": "length-aware.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2281,6 +2418,7 @@
         "parent": "length-aware.lane-2",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2298,6 +2436,7 @@
         "parent": "length-aware.lane-2",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2315,6 +2454,7 @@
         "parent": "length-aware.lane-2",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2327,6 +2467,7 @@
         "parent": "length-aware.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2344,6 +2485,7 @@
         "parent": "length-aware.lane-3",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2361,6 +2503,7 @@
         "parent": "length-aware.lane-3",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2373,6 +2516,7 @@
         "parent": "length-aware.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2390,6 +2534,7 @@
         "parent": "length-aware.lane-4",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2402,6 +2547,7 @@
         "parent": "length-aware.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2419,6 +2565,7 @@
         "parent": "length-aware.lane-5",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2436,6 +2583,7 @@
         "parent": "length-aware.lane-5",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2448,6 +2596,7 @@
         "parent": "length-aware.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2465,6 +2614,7 @@
         "parent": "length-aware.lane-6",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2482,6 +2632,7 @@
         "parent": "length-aware.lane-6",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2494,6 +2645,7 @@
         "parent": "length-aware.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2511,6 +2663,7 @@
         "parent": "length-aware.lane-7",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2528,6 +2681,7 @@
         "parent": "length-aware.lane-7",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2540,6 +2694,7 @@
         "parent": "length-aware.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2557,6 +2712,7 @@
         "parent": "length-aware.lane-8",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2574,25 +2730,27 @@
         "parent": "length-aware.lane-8",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
         "id": "length-aware.bucket-groups",
         "label": "Bucket projection",
         "attrs": {
-          "rule": "group request where request.request_kind == bucket key",
           "dsl_container": "bucket-set",
+          "rule": "group request where request.request_kind == bucket key",
           "dsl_kind": "object"
         },
         "tags": {},
         "parent": "length-aware.bucket-plane",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
         "id": "length-aware.bucket-groups.short",
-        "label": "Short bucket · 6 completed / 7 total",
+        "label": "Short bucket · 6/7 done",
         "attrs": {
           "dsl_container": "bucket",
           "bucket_key": "short",
@@ -2603,6 +2761,7 @@
         "parent": "length-aware.bucket-groups",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2624,6 +2783,7 @@
         "parent": "length-aware.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2645,6 +2805,7 @@
         "parent": "length-aware.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2666,6 +2827,7 @@
         "parent": "length-aware.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2687,6 +2849,7 @@
         "parent": "length-aware.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2708,6 +2871,7 @@
         "parent": "length-aware.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2729,6 +2893,7 @@
         "parent": "length-aware.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2750,11 +2915,12 @@
         "parent": "length-aware.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
         "id": "length-aware.bucket-groups.long",
-        "label": "Long bucket · 6 completed / 11 total",
+        "label": "Long bucket · 6/11 done",
         "attrs": {
           "dsl_container": "bucket",
           "bucket_key": "long",
@@ -2765,6 +2931,7 @@
         "parent": "length-aware.bucket-groups",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2786,6 +2953,7 @@
         "parent": "length-aware.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2807,6 +2975,7 @@
         "parent": "length-aware.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2828,6 +2997,7 @@
         "parent": "length-aware.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2849,6 +3019,7 @@
         "parent": "length-aware.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2870,6 +3041,7 @@
         "parent": "length-aware.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2891,6 +3063,7 @@
         "parent": "length-aware.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2912,6 +3085,7 @@
         "parent": "length-aware.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2933,6 +3107,7 @@
         "parent": "length-aware.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2954,6 +3129,7 @@
         "parent": "length-aware.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2975,6 +3151,7 @@
         "parent": "length-aware.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -2996,6 +3173,7 @@
         "parent": "length-aware.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       }
     ],
@@ -3612,7 +3790,7 @@
           "submission-balanced",
           "submission-balanced.buckets"
         ],
-        "narrative": "A 1:1 submission mix is not a 1:1 completion mix: short requests turn over faster, so the first 12 completions contain 9 short and 3 long requests. Open the Case 1 buckets tab to verify the same requests grouped by request_kind.",
+        "narrative": "Short requests finish faster, so a 1:1 submission mix yields 9 short and 3 long requests among the first 12 completions.",
         "focus": [
           "submission-balanced.summary"
         ]
@@ -3628,7 +3806,7 @@
           "length-aware",
           "length-aware.buckets"
         ],
-        "narrative": "Allocate 2 lanes to short requests and 6 lanes to long requests to account for different chunk lengths. The first 12 completions now contain 6 short and 6 long requests. Open the Case 2 buckets tab to inspect the corresponding request identities.",
+        "narrative": "Allocating 2 lanes to short requests and 6 to long requests balances the first 12 completions at 6 short and 6 long.",
         "focus": [
           "length-aware.summary"
         ]
@@ -3637,8 +3815,15 @@
     "views": [
       {
         "id": "submission-balanced",
-        "label": "Case 1: 1:1 sampling at submission",
+        "label": "Lanes",
         "attrs": {
+          "scale_mode": "fit-width",
+          "min_diagram_width": 800,
+          "label_font_size": 18,
+          "operation_legend": "**Teal:** short · **Amber:** long.\n\n**Dark:** completed · **Pale:** still active.",
+          "supporting_note_label": "Reading the diagram",
+          "supporting_note": "Block width represents request length in chunks; all lanes share one scale.\n\nB=12 marks the first 12 completions in each independent schedule. The bucket view regroups the same requests by length class, retaining their widths and completion status.",
+          "projection_key": "lanes",
           "element_colors": {
             "short-complete": "#6597a6",
             "short-active": "#b9cdd2",
@@ -3664,8 +3849,15 @@
       },
       {
         "id": "submission-balanced.buckets",
-        "label": "Case 1: buckets",
+        "label": "Buckets",
         "attrs": {
+          "scale_mode": "fit-width",
+          "min_diagram_width": 800,
+          "label_font_size": 18,
+          "operation_legend": "**Teal:** short · **Amber:** long.\n\n**Dark:** completed · **Pale:** still active.",
+          "supporting_note_label": "Reading the diagram",
+          "supporting_note": "Block width represents request length in chunks; all lanes share one scale.\n\nB=12 marks the first 12 completions in each independent schedule. The bucket view regroups the same requests by length class, retaining their widths and completion status.",
+          "projection_key": "buckets",
           "element_colors": {
             "short-complete": "#6597a6",
             "short-active": "#b9cdd2",
@@ -3691,8 +3883,15 @@
       },
       {
         "id": "length-aware",
-        "label": "Case 2: Length-aware: 2 short + 6 long lanes",
+        "label": "Lanes",
         "attrs": {
+          "scale_mode": "fit-width",
+          "min_diagram_width": 800,
+          "label_font_size": 18,
+          "operation_legend": "**Teal:** short · **Amber:** long.\n\n**Dark:** completed · **Pale:** still active.",
+          "supporting_note_label": "Reading the diagram",
+          "supporting_note": "Block width represents request length in chunks; all lanes share one scale.\n\nB=12 marks the first 12 completions in each independent schedule. The bucket view regroups the same requests by length class, retaining their widths and completion status.",
+          "projection_key": "lanes",
           "element_colors": {
             "short-complete": "#6597a6",
             "short-active": "#b9cdd2",
@@ -3718,8 +3917,15 @@
       },
       {
         "id": "length-aware.buckets",
-        "label": "Case 2: buckets",
+        "label": "Buckets",
         "attrs": {
+          "scale_mode": "fit-width",
+          "min_diagram_width": 800,
+          "label_font_size": 18,
+          "operation_legend": "**Teal:** short · **Amber:** long.\n\n**Dark:** completed · **Pale:** still active.",
+          "supporting_note_label": "Reading the diagram",
+          "supporting_note": "Block width represents request length in chunks; all lanes share one scale.\n\nB=12 marks the first 12 completions in each independent schedule. The bucket view regroups the same requests by length class, retaining their widths and completion status.",
+          "projection_key": "buckets",
           "element_colors": {
             "short-complete": "#6597a6",
             "short-active": "#b9cdd2",
@@ -3760,6 +3966,7 @@
         "tags": {},
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -3774,6 +3981,7 @@
         "tags": {},
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -3789,6 +3997,7 @@
         "tags": {},
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -3803,6 +4012,7 @@
         "tags": {},
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -3819,6 +4029,7 @@
         "parent": "submission-balanced.summary",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -3835,6 +4046,7 @@
         "parent": "submission-balanced.s1",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -3851,6 +4063,7 @@
         "parent": "submission-balanced.l4",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -3867,6 +4080,7 @@
         "parent": "submission-balanced.l9",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -3883,6 +4097,7 @@
         "parent": "submission-balanced.l1",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -3899,6 +4114,7 @@
         "parent": "submission-balanced.s2",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -3915,6 +4131,7 @@
         "parent": "submission-balanced.l5",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -3931,6 +4148,7 @@
         "parent": "submission-balanced.l2",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -3947,6 +4165,7 @@
         "parent": "submission-balanced.s3",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -3963,6 +4182,7 @@
         "parent": "submission-balanced.s7",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -3979,6 +4199,7 @@
         "parent": "submission-balanced.s9",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -3995,6 +4216,7 @@
         "parent": "submission-balanced.l7",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4011,6 +4233,7 @@
         "parent": "submission-balanced.s4",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4027,6 +4250,7 @@
         "parent": "submission-balanced.s8",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4043,6 +4267,7 @@
         "parent": "submission-balanced.l8",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4059,6 +4284,7 @@
         "parent": "submission-balanced.s5",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4075,6 +4301,7 @@
         "parent": "submission-balanced.s6",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4091,6 +4318,7 @@
         "parent": "submission-balanced.l6",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4107,6 +4335,7 @@
         "parent": "submission-balanced.l3",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4123,6 +4352,7 @@
         "parent": "submission-balanced.l10",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4139,6 +4369,7 @@
         "parent": "submission-balanced.bucket-groups.short.submission-balanced.s1",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4155,6 +4386,7 @@
         "parent": "submission-balanced.bucket-groups.short.submission-balanced.s2",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4171,6 +4403,7 @@
         "parent": "submission-balanced.bucket-groups.short.submission-balanced.s3",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4187,6 +4420,7 @@
         "parent": "submission-balanced.bucket-groups.short.submission-balanced.s7",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4203,6 +4437,7 @@
         "parent": "submission-balanced.bucket-groups.short.submission-balanced.s9",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4219,6 +4454,7 @@
         "parent": "submission-balanced.bucket-groups.short.submission-balanced.s4",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4235,6 +4471,7 @@
         "parent": "submission-balanced.bucket-groups.short.submission-balanced.s8",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4251,6 +4488,7 @@
         "parent": "submission-balanced.bucket-groups.short.submission-balanced.s5",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4267,6 +4505,7 @@
         "parent": "submission-balanced.bucket-groups.short.submission-balanced.s6",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4283,6 +4522,7 @@
         "parent": "submission-balanced.bucket-groups.long.submission-balanced.l4",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4299,6 +4539,7 @@
         "parent": "submission-balanced.bucket-groups.long.submission-balanced.l9",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4315,6 +4556,7 @@
         "parent": "submission-balanced.bucket-groups.long.submission-balanced.l1",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4331,6 +4573,7 @@
         "parent": "submission-balanced.bucket-groups.long.submission-balanced.l5",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4347,6 +4590,7 @@
         "parent": "submission-balanced.bucket-groups.long.submission-balanced.l2",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4363,6 +4607,7 @@
         "parent": "submission-balanced.bucket-groups.long.submission-balanced.l7",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4379,6 +4624,7 @@
         "parent": "submission-balanced.bucket-groups.long.submission-balanced.l8",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4395,6 +4641,7 @@
         "parent": "submission-balanced.bucket-groups.long.submission-balanced.l6",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4411,6 +4658,7 @@
         "parent": "submission-balanced.bucket-groups.long.submission-balanced.l3",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4427,6 +4675,7 @@
         "parent": "submission-balanced.bucket-groups.long.submission-balanced.l10",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4443,6 +4692,7 @@
         "parent": "length-aware.summary",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4459,6 +4709,7 @@
         "parent": "length-aware.s1",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4475,6 +4726,7 @@
         "parent": "length-aware.s2",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4491,6 +4743,7 @@
         "parent": "length-aware.s3",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4507,6 +4760,7 @@
         "parent": "length-aware.s4",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4523,6 +4777,7 @@
         "parent": "length-aware.s5",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4539,6 +4794,7 @@
         "parent": "length-aware.s6",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4555,6 +4811,7 @@
         "parent": "length-aware.s7",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4571,6 +4828,7 @@
         "parent": "length-aware.l1",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4587,6 +4845,7 @@
         "parent": "length-aware.l2",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4603,6 +4862,7 @@
         "parent": "length-aware.l3",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4619,6 +4879,7 @@
         "parent": "length-aware.l5",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4635,6 +4896,7 @@
         "parent": "length-aware.l6",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4651,6 +4913,7 @@
         "parent": "length-aware.l7",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4667,6 +4930,7 @@
         "parent": "length-aware.l8",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4683,6 +4947,7 @@
         "parent": "length-aware.l9",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4699,6 +4964,7 @@
         "parent": "length-aware.l10",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4715,6 +4981,7 @@
         "parent": "length-aware.l11",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4731,6 +4998,7 @@
         "parent": "length-aware.l12",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4747,6 +5015,7 @@
         "parent": "length-aware.bucket-groups.short.length-aware.s1",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4763,6 +5032,7 @@
         "parent": "length-aware.bucket-groups.short.length-aware.s2",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4779,6 +5049,7 @@
         "parent": "length-aware.bucket-groups.short.length-aware.s3",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4795,6 +5066,7 @@
         "parent": "length-aware.bucket-groups.short.length-aware.s4",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4811,6 +5083,7 @@
         "parent": "length-aware.bucket-groups.short.length-aware.s5",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4827,6 +5100,7 @@
         "parent": "length-aware.bucket-groups.short.length-aware.s6",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4843,6 +5117,7 @@
         "parent": "length-aware.bucket-groups.short.length-aware.s7",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4859,6 +5134,7 @@
         "parent": "length-aware.bucket-groups.long.length-aware.l1",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4875,6 +5151,7 @@
         "parent": "length-aware.bucket-groups.long.length-aware.l2",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4891,6 +5168,7 @@
         "parent": "length-aware.bucket-groups.long.length-aware.l3",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4907,6 +5185,7 @@
         "parent": "length-aware.bucket-groups.long.length-aware.l5",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4923,6 +5202,7 @@
         "parent": "length-aware.bucket-groups.long.length-aware.l6",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4939,6 +5219,7 @@
         "parent": "length-aware.bucket-groups.long.length-aware.l7",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4955,6 +5236,7 @@
         "parent": "length-aware.bucket-groups.long.length-aware.l8",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4971,6 +5253,7 @@
         "parent": "length-aware.bucket-groups.long.length-aware.l9",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -4987,6 +5270,7 @@
         "parent": "length-aware.bucket-groups.long.length-aware.l10",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5003,6 +5287,7 @@
         "parent": "length-aware.bucket-groups.long.length-aware.l11",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5019,6 +5304,7 @@
         "parent": "length-aware.bucket-groups.long.length-aware.l12",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5031,6 +5317,7 @@
         "parent": "submission-balanced.figure",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5043,6 +5330,7 @@
         "parent": "submission-balanced.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5060,6 +5348,7 @@
         "parent": "submission-balanced.lane-1",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5077,6 +5366,7 @@
         "parent": "submission-balanced.lane-1",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5094,6 +5384,7 @@
         "parent": "submission-balanced.lane-1",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5106,6 +5397,7 @@
         "parent": "submission-balanced.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5123,6 +5415,7 @@
         "parent": "submission-balanced.lane-2",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5135,6 +5428,7 @@
         "parent": "submission-balanced.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5152,6 +5446,7 @@
         "parent": "submission-balanced.lane-3",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5169,6 +5464,7 @@
         "parent": "submission-balanced.lane-3",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5181,6 +5477,7 @@
         "parent": "submission-balanced.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5198,6 +5495,7 @@
         "parent": "submission-balanced.lane-4",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5210,6 +5508,7 @@
         "parent": "submission-balanced.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5227,6 +5526,7 @@
         "parent": "submission-balanced.lane-5",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5244,6 +5544,7 @@
         "parent": "submission-balanced.lane-5",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5261,6 +5562,7 @@
         "parent": "submission-balanced.lane-5",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5278,6 +5580,7 @@
         "parent": "submission-balanced.lane-5",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5290,6 +5593,7 @@
         "parent": "submission-balanced.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5307,6 +5611,7 @@
         "parent": "submission-balanced.lane-6",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5324,6 +5629,7 @@
         "parent": "submission-balanced.lane-6",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5341,6 +5647,7 @@
         "parent": "submission-balanced.lane-6",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5353,6 +5660,7 @@
         "parent": "submission-balanced.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5370,6 +5678,7 @@
         "parent": "submission-balanced.lane-7",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5387,6 +5696,7 @@
         "parent": "submission-balanced.lane-7",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5404,6 +5714,7 @@
         "parent": "submission-balanced.lane-7",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5416,6 +5727,7 @@
         "parent": "submission-balanced.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5433,6 +5745,7 @@
         "parent": "submission-balanced.lane-8",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5450,25 +5763,27 @@
         "parent": "submission-balanced.lane-8",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
         "id": "submission-balanced.bucket-groups",
         "label": "Bucket projection",
         "attrs": {
-          "rule": "group request where request.request_kind == bucket key",
           "dsl_container": "bucket-set",
+          "rule": "group request where request.request_kind == bucket key",
           "dsl_kind": "object"
         },
         "tags": {},
         "parent": "submission-balanced.bucket-plane",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
         "id": "submission-balanced.bucket-groups.short",
-        "label": "Short bucket · 9 completed / 9 total",
+        "label": "Short bucket · 9/9 done",
         "attrs": {
           "dsl_container": "bucket",
           "bucket_key": "short",
@@ -5479,6 +5794,7 @@
         "parent": "submission-balanced.bucket-groups",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5500,6 +5816,7 @@
         "parent": "submission-balanced.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5521,6 +5838,7 @@
         "parent": "submission-balanced.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5542,6 +5860,7 @@
         "parent": "submission-balanced.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5563,6 +5882,7 @@
         "parent": "submission-balanced.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5584,6 +5904,7 @@
         "parent": "submission-balanced.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5605,6 +5926,7 @@
         "parent": "submission-balanced.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5626,6 +5948,7 @@
         "parent": "submission-balanced.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5647,6 +5970,7 @@
         "parent": "submission-balanced.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5668,11 +5992,12 @@
         "parent": "submission-balanced.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
         "id": "submission-balanced.bucket-groups.long",
-        "label": "Long bucket · 3 completed / 10 total",
+        "label": "Long bucket · 3/10 done",
         "attrs": {
           "dsl_container": "bucket",
           "bucket_key": "long",
@@ -5683,6 +6008,7 @@
         "parent": "submission-balanced.bucket-groups",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5704,6 +6030,7 @@
         "parent": "submission-balanced.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5725,6 +6052,7 @@
         "parent": "submission-balanced.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5746,6 +6074,7 @@
         "parent": "submission-balanced.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5767,6 +6096,7 @@
         "parent": "submission-balanced.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5788,6 +6118,7 @@
         "parent": "submission-balanced.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5809,6 +6140,7 @@
         "parent": "submission-balanced.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5830,6 +6162,7 @@
         "parent": "submission-balanced.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5851,6 +6184,7 @@
         "parent": "submission-balanced.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5872,6 +6206,7 @@
         "parent": "submission-balanced.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5893,6 +6228,7 @@
         "parent": "submission-balanced.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5905,6 +6241,7 @@
         "parent": "length-aware.figure",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5917,6 +6254,7 @@
         "parent": "length-aware.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5934,6 +6272,7 @@
         "parent": "length-aware.lane-1",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5951,6 +6290,7 @@
         "parent": "length-aware.lane-1",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5968,6 +6308,7 @@
         "parent": "length-aware.lane-1",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5985,6 +6326,7 @@
         "parent": "length-aware.lane-1",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -5997,6 +6339,7 @@
         "parent": "length-aware.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6014,6 +6357,7 @@
         "parent": "length-aware.lane-2",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6031,6 +6375,7 @@
         "parent": "length-aware.lane-2",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6048,6 +6393,7 @@
         "parent": "length-aware.lane-2",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6060,6 +6406,7 @@
         "parent": "length-aware.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6077,6 +6424,7 @@
         "parent": "length-aware.lane-3",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6094,6 +6442,7 @@
         "parent": "length-aware.lane-3",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6106,6 +6455,7 @@
         "parent": "length-aware.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6123,6 +6473,7 @@
         "parent": "length-aware.lane-4",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6135,6 +6486,7 @@
         "parent": "length-aware.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6152,6 +6504,7 @@
         "parent": "length-aware.lane-5",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6169,6 +6522,7 @@
         "parent": "length-aware.lane-5",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6181,6 +6535,7 @@
         "parent": "length-aware.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6198,6 +6553,7 @@
         "parent": "length-aware.lane-6",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6215,6 +6571,7 @@
         "parent": "length-aware.lane-6",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6227,6 +6584,7 @@
         "parent": "length-aware.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6244,6 +6602,7 @@
         "parent": "length-aware.lane-7",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6261,6 +6620,7 @@
         "parent": "length-aware.lane-7",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6273,6 +6633,7 @@
         "parent": "length-aware.figure",
         "role": "group",
         "layout": "horizontal",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6290,6 +6651,7 @@
         "parent": "length-aware.lane-8",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6307,25 +6669,27 @@
         "parent": "length-aware.lane-8",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
         "id": "length-aware.bucket-groups",
         "label": "Bucket projection",
         "attrs": {
-          "rule": "group request where request.request_kind == bucket key",
           "dsl_container": "bucket-set",
+          "rule": "group request where request.request_kind == bucket key",
           "dsl_kind": "object"
         },
         "tags": {},
         "parent": "length-aware.bucket-plane",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
         "id": "length-aware.bucket-groups.short",
-        "label": "Short bucket · 6 completed / 7 total",
+        "label": "Short bucket · 6/7 done",
         "attrs": {
           "dsl_container": "bucket",
           "bucket_key": "short",
@@ -6336,6 +6700,7 @@
         "parent": "length-aware.bucket-groups",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6357,6 +6722,7 @@
         "parent": "length-aware.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6378,6 +6744,7 @@
         "parent": "length-aware.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6399,6 +6766,7 @@
         "parent": "length-aware.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6420,6 +6788,7 @@
         "parent": "length-aware.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6441,6 +6810,7 @@
         "parent": "length-aware.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6462,6 +6832,7 @@
         "parent": "length-aware.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6483,11 +6854,12 @@
         "parent": "length-aware.bucket-groups.short",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
         "id": "length-aware.bucket-groups.long",
-        "label": "Long bucket · 6 completed / 11 total",
+        "label": "Long bucket · 6/11 done",
         "attrs": {
           "dsl_container": "bucket",
           "bucket_key": "long",
@@ -6498,6 +6870,7 @@
         "parent": "length-aware.bucket-groups",
         "role": "group",
         "layout": "grid",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6519,6 +6892,7 @@
         "parent": "length-aware.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6540,6 +6914,7 @@
         "parent": "length-aware.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6561,6 +6936,7 @@
         "parent": "length-aware.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6582,6 +6958,7 @@
         "parent": "length-aware.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6603,6 +6980,7 @@
         "parent": "length-aware.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6624,6 +7002,7 @@
         "parent": "length-aware.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6645,6 +7024,7 @@
         "parent": "length-aware.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6666,6 +7046,7 @@
         "parent": "length-aware.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6687,6 +7068,7 @@
         "parent": "length-aware.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6708,6 +7090,7 @@
         "parent": "length-aware.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       },
       {
@@ -6729,6 +7112,7 @@
         "parent": "length-aware.bucket-groups.long",
         "role": "group",
         "layout": "hierarchy",
+        "graph_direction": "down",
         "capacity": {}
       }
     ],
@@ -7346,7 +7730,7 @@
         "cursor": 1,
         "title": "Case 1: 1:1 sampling at submission",
         "detail": null,
-        "narrative": "A 1:1 submission mix is not a 1:1 completion mix: short requests turn over faster, so the first 12 completions contain 9 short and 3 long requests. Open the Case 1 buckets tab to verify the same requests grouped by request_kind.",
+        "narrative": "Short requests finish faster, so a 1:1 submission mix yields 9 short and 3 long requests among the first 12 completions.",
         "focus": [
           "submission-balanced.summary"
         ],
@@ -7370,7 +7754,7 @@
         "cursor": 2,
         "title": "Case 2: Length-aware: 2 short + 6 long lanes",
         "detail": null,
-        "narrative": "Allocate 2 lanes to short requests and 6 lanes to long requests to account for different chunk lengths. The first 12 completions now contain 6 short and 6 long requests. Open the Case 2 buckets tab to inspect the corresponding request identities.",
+        "narrative": "Allocating 2 lanes to short requests and 6 to long requests balances the first 12 completions at 6 short and 6 long.",
         "focus": [
           "length-aware.summary"
         ],
@@ -7395,9 +7779,16 @@
     "views": [
       {
         "id": "submission-balanced",
-        "label": "Case 1: 1:1 sampling at submission",
+        "label": "Lanes",
         "kind": "spatial",
         "attrs": {
+          "scale_mode": "fit-width",
+          "min_diagram_width": 800,
+          "label_font_size": 18,
+          "operation_legend": "**Teal:** short · **Amber:** long.\n\n**Dark:** completed · **Pale:** still active.",
+          "supporting_note_label": "Reading the diagram",
+          "supporting_note": "Block width represents request length in chunks; all lanes share one scale.\n\nB=12 marks the first 12 completions in each independent schedule. The bucket view regroups the same requests by length class, retaining their widths and completion status.",
+          "projection_key": "lanes",
           "element_colors": {
             "short-complete": "#6597a6",
             "short-active": "#b9cdd2",
@@ -8718,9 +9109,16 @@
       },
       {
         "id": "submission-balanced.buckets",
-        "label": "Case 1: buckets",
+        "label": "Buckets",
         "kind": "spatial",
         "attrs": {
+          "scale_mode": "fit-width",
+          "min_diagram_width": 800,
+          "label_font_size": 18,
+          "operation_legend": "**Teal:** short · **Amber:** long.\n\n**Dark:** completed · **Pale:** still active.",
+          "supporting_note_label": "Reading the diagram",
+          "supporting_note": "Block width represents request length in chunks; all lanes share one scale.\n\nB=12 marks the first 12 completions in each independent schedule. The bucket view regroups the same requests by length class, retaining their widths and completion status.",
+          "projection_key": "buckets",
           "element_colors": {
             "short-complete": "#6597a6",
             "short-active": "#b9cdd2",
@@ -9065,7 +9463,7 @@
           },
           {
             "id": "submission-balanced.bucket-groups.short",
-            "label": "Short bucket · 9 completed / 9 total",
+            "label": "Short bucket · 9/9 done",
             "parent": "submission-balanced.bucket-groups",
             "role": "group",
             "layout": "grid",
@@ -9155,7 +9553,7 @@
           },
           {
             "id": "submission-balanced.bucket-groups.long",
-            "label": "Long bucket · 3 completed / 10 total",
+            "label": "Long bucket · 3/10 done",
             "parent": "submission-balanced.bucket-groups",
             "role": "group",
             "layout": "grid",
@@ -9868,9 +10266,16 @@
       },
       {
         "id": "length-aware",
-        "label": "Case 2: Length-aware: 2 short + 6 long lanes",
+        "label": "Lanes",
         "kind": "spatial",
         "attrs": {
+          "scale_mode": "fit-width",
+          "min_diagram_width": 800,
+          "label_font_size": 18,
+          "operation_legend": "**Teal:** short · **Amber:** long.\n\n**Dark:** completed · **Pale:** still active.",
+          "supporting_note_label": "Reading the diagram",
+          "supporting_note": "Block width represents request length in chunks; all lanes share one scale.\n\nB=12 marks the first 12 completions in each independent schedule. The bucket view regroups the same requests by length class, retaining their widths and completion status.",
+          "projection_key": "lanes",
           "element_colors": {
             "short-complete": "#6597a6",
             "short-active": "#b9cdd2",
@@ -11138,9 +11543,16 @@
       },
       {
         "id": "length-aware.buckets",
-        "label": "Case 2: buckets",
+        "label": "Buckets",
         "kind": "spatial",
         "attrs": {
+          "scale_mode": "fit-width",
+          "min_diagram_width": 800,
+          "label_font_size": 18,
+          "operation_legend": "**Teal:** short · **Amber:** long.\n\n**Dark:** completed · **Pale:** still active.",
+          "supporting_note_label": "Reading the diagram",
+          "supporting_note": "Block width represents request length in chunks; all lanes share one scale.\n\nB=12 marks the first 12 completions in each independent schedule. The bucket view regroups the same requests by length class, retaining their widths and completion status.",
+          "projection_key": "buckets",
           "element_colors": {
             "short-complete": "#6597a6",
             "short-active": "#b9cdd2",
@@ -11469,7 +11881,7 @@
           },
           {
             "id": "length-aware.bucket-groups.short",
-            "label": "Short bucket · 6 completed / 7 total",
+            "label": "Short bucket · 6/7 done",
             "parent": "length-aware.bucket-groups",
             "role": "group",
             "layout": "grid",
@@ -11541,7 +11953,7 @@
           },
           {
             "id": "length-aware.bucket-groups.long",
-            "label": "Long bucket · 6 completed / 11 total",
+            "label": "Long bucket · 6/11 done",
             "parent": "length-aware.bucket-groups",
             "role": "group",
             "layout": "grid",

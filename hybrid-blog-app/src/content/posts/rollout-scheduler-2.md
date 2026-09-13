@@ -37,8 +37,7 @@ A：并行度过大，则永远是quickest/shortest-first，并行度过小，�
 
 这样的想法在同步训练中是自然的，但是在异步RL中，由于我们不知道barrier什么时候到来，这样做的后果就是，**batch的分布受到期望完成时间的影响，而产生了bias**。
 
-下图是最简单的示意：
-<figure class="sviz-demo">
+<figure class="sviz-demo sviz-demo-rollout">
   <div class="sviz-demo-frame">
     <systems-viz-next
       src="/demos/sviz/rollout-scheduler-example.json"
@@ -46,6 +45,6 @@ A：并行度过大，则永远是quickest/shortest-first，并行度过小，�
       theme="auto"
     ></systems-viz-next>
   </div>
-  <figcaption>Length-aware rollout lane allocation</figcaption>
+  <figcaption>八条 lane 下的两个独立 schedule：1:1 提交得到 9 短 / 3 长；2 短 lane + 6 长 lane 得到 6 短 / 6 长（均取前 12 个完成结果）。</figcaption>
 </figure>
 <script type="module" src="/demos/sviz/systems-viz-next.js"></script>

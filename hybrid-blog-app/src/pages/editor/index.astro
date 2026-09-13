@@ -261,7 +261,7 @@ const editableEntries = entries.map((entry) => ({
 
 <script>
   import DOMPurify from "dompurify";
-  import { marked } from "marked";
+  import { previewMarkdown } from "@/lib/editor/markdown";
   import {
     MAX_SVIZ_JSON_BYTES,
     parseSvizDisplayJson,
@@ -365,11 +365,6 @@ const editableEntries = entries.map((entry) => ({
 
   const today = new Date().toISOString().slice(0, 10);
   if (dateField) dateField.value = today;
-
-  marked.setOptions({
-    gfm: true,
-    breaks: false,
-  });
 
   function listFromInput(value: string) {
     return value
@@ -623,7 +618,7 @@ const editableEntries = entries.map((entry) => ({
     if (!target) return;
 
     const embed = readSvizEmbed(markdown);
-    const html = marked.parse(stripSvizEmbed(stripFrontmatter(markdown)), { async: false }) as string;
+    const html = previewMarkdown.parse(stripSvizEmbed(stripFrontmatter(markdown)), { async: false }) as string;
     target.innerHTML = DOMPurify.sanitize(html);
     if (embed) {
       const figure = document.createElement("figure");

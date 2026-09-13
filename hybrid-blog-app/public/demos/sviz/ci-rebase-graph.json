@@ -1,0 +1,1085 @@
+{
+  "format": "sviz-display",
+  "format_version": "0.2-draft",
+  "visualization_id": "ci-rebase-graph",
+  "base_revision": "sha256:b66fbfe2a7a4309c6ed941fd92ec91531a213fb9a4994242ce320fb63d3e2109",
+  "title": "CI reuse across a rebase",
+  "description": null,
+  "source": {
+    "version": "0.2-draft",
+    "id": "ci-rebase-graph",
+    "title": "CI reuse across a rebase",
+    "time": {
+      "mode": "steps"
+    },
+    "places": [
+      {
+        "id": "rebase.graph",
+        "label": "Commit states · arrows carry diffs",
+        "attrs": {
+          "dsl_view": "rebase",
+          "dsl_kind": "plane"
+        },
+        "tags": {},
+        "role": "group",
+        "layout": "dag",
+        "graph_direction": "down",
+        "capacity": {}
+      },
+      {
+        "id": "rebase-change.graph",
+        "label": "Commit states · arrows carry diffs",
+        "attrs": {
+          "dsl_view": "rebase-change",
+          "dsl_kind": "plane"
+        },
+        "tags": {},
+        "role": "group",
+        "layout": "dag",
+        "graph_direction": "down",
+        "capacity": {}
+      },
+      {
+        "id": "rebase.master-k",
+        "label": "Master K",
+        "attrs": {
+          "dsl_kind": "master"
+        },
+        "tags": {},
+        "parent": "rebase.graph",
+        "role": "group",
+        "layout": "hierarchy",
+        "graph_direction": "down",
+        "capacity": {}
+      },
+      {
+        "id": "rebase.master-next",
+        "label": "Master K+1",
+        "attrs": {
+          "dsl_kind": "master"
+        },
+        "tags": {},
+        "parent": "rebase.graph",
+        "role": "group",
+        "layout": "hierarchy",
+        "graph_direction": "down",
+        "capacity": {}
+      },
+      {
+        "id": "rebase.branch-n",
+        "label": "Branch N",
+        "attrs": {
+          "dsl_kind": "branch"
+        },
+        "tags": {},
+        "parent": "rebase.graph",
+        "role": "group",
+        "layout": "hierarchy",
+        "graph_direction": "down",
+        "capacity": {}
+      },
+      {
+        "id": "rebase.branch-next",
+        "label": "Branch N+1",
+        "attrs": {
+          "dsl_kind": "rebased"
+        },
+        "tags": {},
+        "parent": "rebase.graph",
+        "role": "group",
+        "layout": "hierarchy",
+        "graph_direction": "down",
+        "capacity": {}
+      },
+      {
+        "id": "rebase-change.master-k",
+        "label": "Master K",
+        "attrs": {
+          "dsl_kind": "master"
+        },
+        "tags": {},
+        "parent": "rebase-change.graph",
+        "role": "group",
+        "layout": "hierarchy",
+        "graph_direction": "down",
+        "capacity": {}
+      },
+      {
+        "id": "rebase-change.master-next",
+        "label": "Master K+1",
+        "attrs": {
+          "dsl_kind": "master"
+        },
+        "tags": {},
+        "parent": "rebase-change.graph",
+        "role": "group",
+        "layout": "hierarchy",
+        "graph_direction": "down",
+        "capacity": {}
+      },
+      {
+        "id": "rebase-change.branch-n",
+        "label": "Branch N",
+        "attrs": {
+          "dsl_kind": "branch"
+        },
+        "tags": {},
+        "parent": "rebase-change.graph",
+        "role": "group",
+        "layout": "hierarchy",
+        "graph_direction": "down",
+        "capacity": {}
+      },
+      {
+        "id": "rebase-change.branch-next",
+        "label": "Branch N+1",
+        "attrs": {
+          "dsl_kind": "rebased"
+        },
+        "tags": {},
+        "parent": "rebase-change.graph",
+        "role": "group",
+        "layout": "hierarchy",
+        "graph_direction": "down",
+        "capacity": {}
+      }
+    ],
+    "resources": [],
+    "links": [
+      {
+        "id": "rebase.diff-a",
+        "label": "Diff(A)",
+        "attrs": {
+          "semantic_role": "edge",
+          "source_plane": "rebase.graph",
+          "target_plane": "rebase.graph",
+          "source_view": "rebase",
+          "target_view": "rebase"
+        },
+        "tags": {},
+        "from": "rebase.master-k",
+        "to": "rebase.master-next",
+        "directed": true
+      },
+      {
+        "id": "rebase.diff-b",
+        "label": "Diff(B)",
+        "attrs": {
+          "semantic_role": "edge",
+          "source_plane": "rebase.graph",
+          "target_plane": "rebase.graph",
+          "source_view": "rebase",
+          "target_view": "rebase"
+        },
+        "tags": {},
+        "from": "rebase.master-k",
+        "to": "rebase.branch-n",
+        "directed": true
+      },
+      {
+        "id": "rebase.rebased-diff",
+        "label": "Diff(B)",
+        "attrs": {
+          "semantic_role": "edge",
+          "source_plane": "rebase.graph",
+          "target_plane": "rebase.graph",
+          "source_view": "rebase",
+          "target_view": "rebase"
+        },
+        "tags": {},
+        "from": "rebase.master-next",
+        "to": "rebase.branch-next",
+        "directed": true
+      },
+      {
+        "id": "rebase-change.diff-a",
+        "label": "Diff(A)",
+        "attrs": {
+          "semantic_role": "edge",
+          "source_plane": "rebase-change.graph",
+          "target_plane": "rebase-change.graph",
+          "source_view": "rebase-change",
+          "target_view": "rebase-change"
+        },
+        "tags": {},
+        "from": "rebase-change.master-k",
+        "to": "rebase-change.master-next",
+        "directed": true
+      },
+      {
+        "id": "rebase-change.diff-b",
+        "label": "Diff(B)",
+        "attrs": {
+          "semantic_role": "edge",
+          "source_plane": "rebase-change.graph",
+          "target_plane": "rebase-change.graph",
+          "source_view": "rebase-change",
+          "target_view": "rebase-change"
+        },
+        "tags": {},
+        "from": "rebase-change.master-k",
+        "to": "rebase-change.branch-n",
+        "directed": true
+      },
+      {
+        "id": "rebase-change.rebased-diff",
+        "label": "Diff(B) ∪ Diff(C)",
+        "attrs": {
+          "semantic_role": "edge",
+          "source_plane": "rebase-change.graph",
+          "target_plane": "rebase-change.graph",
+          "source_view": "rebase-change",
+          "target_view": "rebase-change"
+        },
+        "tags": {},
+        "from": "rebase-change.master-next",
+        "to": "rebase-change.branch-next",
+        "directed": true
+      },
+      {
+        "id": "rebase-change.diff-c",
+        "label": "Diff(C)",
+        "attrs": {
+          "semantic_role": "edge",
+          "source_plane": "rebase-change.graph",
+          "target_plane": "rebase-change.graph",
+          "source_view": "rebase-change",
+          "target_view": "rebase-change"
+        },
+        "tags": {},
+        "from": "rebase-change.branch-n",
+        "to": "rebase-change.branch-next",
+        "directed": true
+      }
+    ],
+    "entities": [],
+    "initial_materializations": [],
+    "operations": [],
+    "stages": [],
+    "flows": [],
+    "annotations": [],
+    "checkpoints": [
+      {
+        "id": "step.rebase",
+        "label": "01 · Rebase an unchanged branch",
+        "attrs": {},
+        "tags": {},
+        "step": 1,
+        "view": "rebase",
+        "views": [
+          "rebase"
+        ],
+        "narrative": "### Rebase with no additional branch change\n\nmaster分支上面 **K** 到 **K+1** 次MR间的commit记为 **Diff(A)**. Branch **N** 在提出MR时的commit为\n**Diff(B)**; rebase一次到新的master产生了 **Branch N+1**.\n\n**Already known**\n\n- Diff(A) → CI(K, K+1), abbreviated **A**.\n- Diff(B) → CI(K, N), abbreviated **B**.\n\n**Run again:** A ∩ B — 同时被master变化触发的job和被MR本身commit触发的job\n\n**Reuse / skip:** B − A — 此前被Diff(B)触发且不受master影响。\n",
+        "focus": []
+      },
+      {
+        "id": "step.rebase-change",
+        "label": "02 · Rebase with a new branch change",
+        "attrs": {},
+        "tags": {},
+        "step": 2,
+        "view": "rebase-change",
+        "views": [
+          "rebase-change"
+        ],
+        "narrative": "### Rebase plus an additional branch change\n\nBranch N进一步修改了**Diff(C)**. 最新的MR更改的代码包括**Diff(B) ∪ Diff(C)**. \n\n**Already known:** \nA = CI(K, K+1), B = CI(K, N).\n\n**Additionally compute:** \nDiff(C) → C = CI(N, N+1).\n\n **T = CI(K+1, N+1)**. The source expands its job set as:\n\n**T = (A ∩ T) ∪ (B − A) ∪ (C − A)**\n\n**Run again:** (A ∩ T) ∪ (C − A).\n\n**Reuse:** (B − A) \n\nSkip 掉（复用）已知的 CI(K, N) − CI(K, K+1) 结果。\n",
+        "focus": []
+      }
+    ],
+    "views": [
+      {
+        "id": "rebase",
+        "label": "01 · Rebase an unchanged branch",
+        "attrs": {
+          "element_colors": {
+            "master": "#5976c5",
+            "branch": "#238b86",
+            "rebased": "#c08a31"
+          }
+        },
+        "tags": {},
+        "kind": "spatial",
+        "roots": [
+          "rebase.graph"
+        ],
+        "resources": [],
+        "draggable": [
+          "rebase.graph"
+        ],
+        "importance": []
+      },
+      {
+        "id": "rebase-change",
+        "label": "02 · Rebase with a new branch change",
+        "attrs": {
+          "element_colors": {
+            "master": "#5976c5",
+            "branch": "#238b86",
+            "rebased": "#c08a31"
+          }
+        },
+        "tags": {},
+        "kind": "spatial",
+        "roots": [
+          "rebase-change.graph"
+        ],
+        "resources": [],
+        "draggable": [
+          "rebase-change.graph"
+        ],
+        "importance": []
+      }
+    ]
+  },
+  "semantic": {
+    "places": [
+      {
+        "id": "rebase.graph",
+        "label": "Commit states · arrows carry diffs",
+        "attrs": {
+          "dsl_view": "rebase",
+          "dsl_kind": "plane"
+        },
+        "tags": {},
+        "role": "group",
+        "layout": "dag",
+        "graph_direction": "down",
+        "capacity": {}
+      },
+      {
+        "id": "rebase-change.graph",
+        "label": "Commit states · arrows carry diffs",
+        "attrs": {
+          "dsl_view": "rebase-change",
+          "dsl_kind": "plane"
+        },
+        "tags": {},
+        "role": "group",
+        "layout": "dag",
+        "graph_direction": "down",
+        "capacity": {}
+      },
+      {
+        "id": "rebase.master-k",
+        "label": "Master K",
+        "attrs": {
+          "dsl_kind": "master"
+        },
+        "tags": {},
+        "parent": "rebase.graph",
+        "role": "group",
+        "layout": "hierarchy",
+        "graph_direction": "down",
+        "capacity": {}
+      },
+      {
+        "id": "rebase.master-next",
+        "label": "Master K+1",
+        "attrs": {
+          "dsl_kind": "master"
+        },
+        "tags": {},
+        "parent": "rebase.graph",
+        "role": "group",
+        "layout": "hierarchy",
+        "graph_direction": "down",
+        "capacity": {}
+      },
+      {
+        "id": "rebase.branch-n",
+        "label": "Branch N",
+        "attrs": {
+          "dsl_kind": "branch"
+        },
+        "tags": {},
+        "parent": "rebase.graph",
+        "role": "group",
+        "layout": "hierarchy",
+        "graph_direction": "down",
+        "capacity": {}
+      },
+      {
+        "id": "rebase.branch-next",
+        "label": "Branch N+1",
+        "attrs": {
+          "dsl_kind": "rebased"
+        },
+        "tags": {},
+        "parent": "rebase.graph",
+        "role": "group",
+        "layout": "hierarchy",
+        "graph_direction": "down",
+        "capacity": {}
+      },
+      {
+        "id": "rebase-change.master-k",
+        "label": "Master K",
+        "attrs": {
+          "dsl_kind": "master"
+        },
+        "tags": {},
+        "parent": "rebase-change.graph",
+        "role": "group",
+        "layout": "hierarchy",
+        "graph_direction": "down",
+        "capacity": {}
+      },
+      {
+        "id": "rebase-change.master-next",
+        "label": "Master K+1",
+        "attrs": {
+          "dsl_kind": "master"
+        },
+        "tags": {},
+        "parent": "rebase-change.graph",
+        "role": "group",
+        "layout": "hierarchy",
+        "graph_direction": "down",
+        "capacity": {}
+      },
+      {
+        "id": "rebase-change.branch-n",
+        "label": "Branch N",
+        "attrs": {
+          "dsl_kind": "branch"
+        },
+        "tags": {},
+        "parent": "rebase-change.graph",
+        "role": "group",
+        "layout": "hierarchy",
+        "graph_direction": "down",
+        "capacity": {}
+      },
+      {
+        "id": "rebase-change.branch-next",
+        "label": "Branch N+1",
+        "attrs": {
+          "dsl_kind": "rebased"
+        },
+        "tags": {},
+        "parent": "rebase-change.graph",
+        "role": "group",
+        "layout": "hierarchy",
+        "graph_direction": "down",
+        "capacity": {}
+      }
+    ],
+    "resources": [],
+    "links": [
+      {
+        "id": "rebase.diff-a",
+        "label": "Diff(A)",
+        "attrs": {
+          "semantic_role": "edge",
+          "source_plane": "rebase.graph",
+          "target_plane": "rebase.graph",
+          "source_view": "rebase",
+          "target_view": "rebase"
+        },
+        "tags": {},
+        "from": "rebase.master-k",
+        "to": "rebase.master-next",
+        "directed": true
+      },
+      {
+        "id": "rebase.diff-b",
+        "label": "Diff(B)",
+        "attrs": {
+          "semantic_role": "edge",
+          "source_plane": "rebase.graph",
+          "target_plane": "rebase.graph",
+          "source_view": "rebase",
+          "target_view": "rebase"
+        },
+        "tags": {},
+        "from": "rebase.master-k",
+        "to": "rebase.branch-n",
+        "directed": true
+      },
+      {
+        "id": "rebase.rebased-diff",
+        "label": "Diff(B)",
+        "attrs": {
+          "semantic_role": "edge",
+          "source_plane": "rebase.graph",
+          "target_plane": "rebase.graph",
+          "source_view": "rebase",
+          "target_view": "rebase"
+        },
+        "tags": {},
+        "from": "rebase.master-next",
+        "to": "rebase.branch-next",
+        "directed": true
+      },
+      {
+        "id": "rebase-change.diff-a",
+        "label": "Diff(A)",
+        "attrs": {
+          "semantic_role": "edge",
+          "source_plane": "rebase-change.graph",
+          "target_plane": "rebase-change.graph",
+          "source_view": "rebase-change",
+          "target_view": "rebase-change"
+        },
+        "tags": {},
+        "from": "rebase-change.master-k",
+        "to": "rebase-change.master-next",
+        "directed": true
+      },
+      {
+        "id": "rebase-change.diff-b",
+        "label": "Diff(B)",
+        "attrs": {
+          "semantic_role": "edge",
+          "source_plane": "rebase-change.graph",
+          "target_plane": "rebase-change.graph",
+          "source_view": "rebase-change",
+          "target_view": "rebase-change"
+        },
+        "tags": {},
+        "from": "rebase-change.master-k",
+        "to": "rebase-change.branch-n",
+        "directed": true
+      },
+      {
+        "id": "rebase-change.rebased-diff",
+        "label": "Diff(B) ∪ Diff(C)",
+        "attrs": {
+          "semantic_role": "edge",
+          "source_plane": "rebase-change.graph",
+          "target_plane": "rebase-change.graph",
+          "source_view": "rebase-change",
+          "target_view": "rebase-change"
+        },
+        "tags": {},
+        "from": "rebase-change.master-next",
+        "to": "rebase-change.branch-next",
+        "directed": true
+      },
+      {
+        "id": "rebase-change.diff-c",
+        "label": "Diff(C)",
+        "attrs": {
+          "semantic_role": "edge",
+          "source_plane": "rebase-change.graph",
+          "target_plane": "rebase-change.graph",
+          "source_view": "rebase-change",
+          "target_view": "rebase-change"
+        },
+        "tags": {},
+        "from": "rebase-change.branch-n",
+        "to": "rebase-change.branch-next",
+        "directed": true
+      }
+    ],
+    "entities": [],
+    "operations": [],
+    "stages": [],
+    "flows": [],
+    "stage_index": {}
+  },
+  "content": {
+    "annotations": []
+  },
+  "execution": {
+    "mode": "steps",
+    "unit": null,
+    "events": [],
+    "checkpoints": [
+      {
+        "id": "step.rebase",
+        "cursor": 1,
+        "title": "01 · Rebase an unchanged branch",
+        "detail": null,
+        "narrative": "### Rebase with no additional branch change\n\nmaster分支上面 **K** 到 **K+1** 次MR间的commit记为 **Diff(A)**. Branch **N** 在提出MR时的commit为\n**Diff(B)**; rebase一次到新的master产生了 **Branch N+1**.\n\n**Already known**\n\n- Diff(A) → CI(K, K+1), abbreviated **A**.\n- Diff(B) → CI(K, N), abbreviated **B**.\n\n**Run again:** A ∩ B — 同时被master变化触发的job和被MR本身commit触发的job\n\n**Reuse / skip:** B − A — 此前被Diff(B)触发且不受master影响。\n",
+        "focus": [],
+        "view": "rebase",
+        "views": [
+          "rebase"
+        ],
+        "active_stages": [],
+        "active_flows": [],
+        "materializations": [],
+        "resource_ledgers": [],
+        "changes": {
+          "created": [],
+          "retired": [],
+          "updated": []
+        }
+      },
+      {
+        "id": "step.rebase-change",
+        "cursor": 2,
+        "title": "02 · Rebase with a new branch change",
+        "detail": null,
+        "narrative": "### Rebase plus an additional branch change\n\nBranch N进一步修改了**Diff(C)**. 最新的MR更改的代码包括**Diff(B) ∪ Diff(C)**. \n\n**Already known:** \nA = CI(K, K+1), B = CI(K, N).\n\n**Additionally compute:** \nDiff(C) → C = CI(N, N+1).\n\n **T = CI(K+1, N+1)**. The source expands its job set as:\n\n**T = (A ∩ T) ∪ (B − A) ∪ (C − A)**\n\n**Run again:** (A ∩ T) ∪ (C − A).\n\n**Reuse:** (B − A) \n\nSkip 掉（复用）已知的 CI(K, N) − CI(K, K+1) 结果。\n",
+        "focus": [],
+        "view": "rebase-change",
+        "views": [
+          "rebase-change"
+        ],
+        "active_stages": [],
+        "active_flows": [],
+        "materializations": [],
+        "resource_ledgers": [],
+        "changes": {
+          "created": [],
+          "retired": [],
+          "updated": []
+        }
+      }
+    ]
+  },
+  "display": {
+    "views": [
+      {
+        "id": "rebase",
+        "label": "01 · Rebase an unchanged branch",
+        "kind": "spatial",
+        "attrs": {
+          "element_colors": {
+            "master": "#5976c5",
+            "branch": "#238b86",
+            "rebased": "#c08a31"
+          }
+        },
+        "roots": [
+          "rebase.graph"
+        ],
+        "draggable": [
+          "rebase.graph"
+        ],
+        "importance": [],
+        "places": [
+          {
+            "id": "rebase.graph",
+            "label": "Commit states · arrows carry diffs",
+            "parent": null,
+            "role": "group",
+            "layout": "dag",
+            "kind": "plane",
+            "hidden": false
+          },
+          {
+            "id": "rebase.master-k",
+            "label": "Master K",
+            "parent": "rebase.graph",
+            "role": "group",
+            "layout": "hierarchy",
+            "kind": "master",
+            "hidden": false,
+            "graph_node": true
+          },
+          {
+            "id": "rebase.master-next",
+            "label": "Master K+1",
+            "parent": "rebase.graph",
+            "role": "group",
+            "layout": "hierarchy",
+            "kind": "master",
+            "hidden": false,
+            "graph_node": true
+          },
+          {
+            "id": "rebase.branch-n",
+            "label": "Branch N",
+            "parent": "rebase.graph",
+            "role": "group",
+            "layout": "hierarchy",
+            "kind": "branch",
+            "hidden": false,
+            "graph_node": true
+          },
+          {
+            "id": "rebase.branch-next",
+            "label": "Branch N+1",
+            "parent": "rebase.graph",
+            "role": "group",
+            "layout": "hierarchy",
+            "kind": "rebased",
+            "hidden": false,
+            "graph_node": true
+          }
+        ],
+        "children": {
+          "rebase.graph": [
+            "rebase.master-k",
+            "rebase.master-next",
+            "rebase.branch-n",
+            "rebase.branch-next"
+          ]
+        },
+        "routes": [
+          {
+            "id": "rebase.diff-a",
+            "label": "Diff(A)",
+            "from": "rebase.master-k",
+            "to": "rebase.master-next",
+            "from_root": "rebase.graph",
+            "to_root": "rebase.graph",
+            "directed": true,
+            "resource": null,
+            "semantic_role": "edge",
+            "graph": {
+              "direction": "down",
+              "from_port": 0.3333333333333333,
+              "to_port": 0.5,
+              "span": 1,
+              "bypass": 0
+            }
+          },
+          {
+            "id": "rebase.diff-b",
+            "label": "Diff(B)",
+            "from": "rebase.master-k",
+            "to": "rebase.branch-n",
+            "from_root": "rebase.graph",
+            "to_root": "rebase.graph",
+            "directed": true,
+            "resource": null,
+            "semantic_role": "edge",
+            "graph": {
+              "direction": "down",
+              "from_port": 0.6666666666666666,
+              "to_port": 0.5,
+              "span": 1,
+              "bypass": 0
+            }
+          },
+          {
+            "id": "rebase.rebased-diff",
+            "label": "Diff(B)",
+            "from": "rebase.master-next",
+            "to": "rebase.branch-next",
+            "from_root": "rebase.graph",
+            "to_root": "rebase.graph",
+            "directed": true,
+            "resource": null,
+            "semantic_role": "edge",
+            "graph": {
+              "direction": "down",
+              "from_port": 0.5,
+              "to_port": 0.5,
+              "span": 1,
+              "bypass": 0
+            }
+          }
+        ],
+        "geometry": {
+          "wide": {
+            "canvas": {
+              "width": 1000,
+              "height": 584
+            },
+            "places": {
+              "rebase.graph": {
+                "x": 12,
+                "y": 12,
+                "w": 976,
+                "h": 560
+              },
+              "rebase.master-k": {
+                "x": 390,
+                "y": 64,
+                "w": 220,
+                "h": 76
+              },
+              "rebase.master-next": {
+                "x": 210,
+                "y": 264,
+                "w": 220,
+                "h": 76
+              },
+              "rebase.branch-n": {
+                "x": 570,
+                "y": 264,
+                "w": 220,
+                "h": 76
+              },
+              "rebase.branch-next": {
+                "x": 390,
+                "y": 464,
+                "w": 220,
+                "h": 76
+              }
+            }
+          },
+          "narrow": {
+            "canvas": {
+              "width": 480,
+              "height": 584
+            },
+            "places": {
+              "rebase.graph": {
+                "x": 12,
+                "y": 12,
+                "w": 456,
+                "h": 560
+              },
+              "rebase.master-k": {
+                "x": 160,
+                "y": 64,
+                "w": 160,
+                "h": 76
+              },
+              "rebase.master-next": {
+                "x": 44,
+                "y": 264,
+                "w": 160,
+                "h": 76
+              },
+              "rebase.branch-n": {
+                "x": 276,
+                "y": 264,
+                "w": 160,
+                "h": 76
+              },
+              "rebase.branch-next": {
+                "x": 160,
+                "y": 464,
+                "w": 160,
+                "h": 76
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "rebase-change",
+        "label": "02 · Rebase with a new branch change",
+        "kind": "spatial",
+        "attrs": {
+          "element_colors": {
+            "master": "#5976c5",
+            "branch": "#238b86",
+            "rebased": "#c08a31"
+          }
+        },
+        "roots": [
+          "rebase-change.graph"
+        ],
+        "draggable": [
+          "rebase-change.graph"
+        ],
+        "importance": [],
+        "places": [
+          {
+            "id": "rebase-change.graph",
+            "label": "Commit states · arrows carry diffs",
+            "parent": null,
+            "role": "group",
+            "layout": "dag",
+            "kind": "plane",
+            "hidden": false
+          },
+          {
+            "id": "rebase-change.master-k",
+            "label": "Master K",
+            "parent": "rebase-change.graph",
+            "role": "group",
+            "layout": "hierarchy",
+            "kind": "master",
+            "hidden": false,
+            "graph_node": true
+          },
+          {
+            "id": "rebase-change.master-next",
+            "label": "Master K+1",
+            "parent": "rebase-change.graph",
+            "role": "group",
+            "layout": "hierarchy",
+            "kind": "master",
+            "hidden": false,
+            "graph_node": true
+          },
+          {
+            "id": "rebase-change.branch-n",
+            "label": "Branch N",
+            "parent": "rebase-change.graph",
+            "role": "group",
+            "layout": "hierarchy",
+            "kind": "branch",
+            "hidden": false,
+            "graph_node": true
+          },
+          {
+            "id": "rebase-change.branch-next",
+            "label": "Branch N+1",
+            "parent": "rebase-change.graph",
+            "role": "group",
+            "layout": "hierarchy",
+            "kind": "rebased",
+            "hidden": false,
+            "graph_node": true
+          }
+        ],
+        "children": {
+          "rebase-change.graph": [
+            "rebase-change.master-k",
+            "rebase-change.master-next",
+            "rebase-change.branch-n",
+            "rebase-change.branch-next"
+          ]
+        },
+        "routes": [
+          {
+            "id": "rebase-change.diff-a",
+            "label": "Diff(A)",
+            "from": "rebase-change.master-k",
+            "to": "rebase-change.master-next",
+            "from_root": "rebase-change.graph",
+            "to_root": "rebase-change.graph",
+            "directed": true,
+            "resource": null,
+            "semantic_role": "edge",
+            "graph": {
+              "direction": "down",
+              "from_port": 0.3333333333333333,
+              "to_port": 0.5,
+              "span": 1,
+              "bypass": 0
+            }
+          },
+          {
+            "id": "rebase-change.diff-b",
+            "label": "Diff(B)",
+            "from": "rebase-change.master-k",
+            "to": "rebase-change.branch-n",
+            "from_root": "rebase-change.graph",
+            "to_root": "rebase-change.graph",
+            "directed": true,
+            "resource": null,
+            "semantic_role": "edge",
+            "graph": {
+              "direction": "down",
+              "from_port": 0.6666666666666666,
+              "to_port": 0.5,
+              "span": 1,
+              "bypass": 0
+            }
+          },
+          {
+            "id": "rebase-change.rebased-diff",
+            "label": "Diff(B) ∪ Diff(C)",
+            "from": "rebase-change.master-next",
+            "to": "rebase-change.branch-next",
+            "from_root": "rebase-change.graph",
+            "to_root": "rebase-change.graph",
+            "directed": true,
+            "resource": null,
+            "semantic_role": "edge",
+            "graph": {
+              "direction": "down",
+              "from_port": 0.5,
+              "to_port": 0.3333333333333333,
+              "span": 1,
+              "bypass": 0
+            }
+          },
+          {
+            "id": "rebase-change.diff-c",
+            "label": "Diff(C)",
+            "from": "rebase-change.branch-n",
+            "to": "rebase-change.branch-next",
+            "from_root": "rebase-change.graph",
+            "to_root": "rebase-change.graph",
+            "directed": true,
+            "resource": null,
+            "semantic_role": "edge",
+            "graph": {
+              "direction": "down",
+              "from_port": 0.5,
+              "to_port": 0.6666666666666666,
+              "span": 1,
+              "bypass": 0
+            }
+          }
+        ],
+        "geometry": {
+          "wide": {
+            "canvas": {
+              "width": 1000,
+              "height": 584
+            },
+            "places": {
+              "rebase-change.graph": {
+                "x": 12,
+                "y": 12,
+                "w": 976,
+                "h": 560
+              },
+              "rebase-change.master-k": {
+                "x": 390,
+                "y": 64,
+                "w": 220,
+                "h": 76
+              },
+              "rebase-change.master-next": {
+                "x": 210,
+                "y": 264,
+                "w": 220,
+                "h": 76
+              },
+              "rebase-change.branch-n": {
+                "x": 570,
+                "y": 264,
+                "w": 220,
+                "h": 76
+              },
+              "rebase-change.branch-next": {
+                "x": 390,
+                "y": 464,
+                "w": 220,
+                "h": 76
+              }
+            }
+          },
+          "narrow": {
+            "canvas": {
+              "width": 480,
+              "height": 584
+            },
+            "places": {
+              "rebase-change.graph": {
+                "x": 12,
+                "y": 12,
+                "w": 456,
+                "h": 560
+              },
+              "rebase-change.master-k": {
+                "x": 160,
+                "y": 64,
+                "w": 160,
+                "h": 76
+              },
+              "rebase-change.master-next": {
+                "x": 44,
+                "y": 264,
+                "w": 160,
+                "h": 76
+              },
+              "rebase-change.branch-n": {
+                "x": 276,
+                "y": 264,
+                "w": 160,
+                "h": 76
+              },
+              "rebase-change.branch-next": {
+                "x": 160,
+                "y": 464,
+                "w": 160,
+                "h": 76
+              }
+            }
+          }
+        }
+      }
+    ],
+    "correspondences": [],
+    "inspectors": {
+      "source": false,
+      "compiled": false
+    }
+  },
+  "warnings": []
+}
