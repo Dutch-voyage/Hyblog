@@ -1,6 +1,5 @@
 import { validateSlug } from "./editor/content";
 
-export const MAX_SVIZ_JSON_BYTES = 2 * 1024 * 1024;
 export const SVIZ_DISPLAY_FORMAT = "sviz-display";
 export const SVIZ_DISPLAY_VERSION = "0.2-draft";
 
@@ -43,10 +42,6 @@ function requireNonEmptyString(document: Record<string, unknown>, key: string) {
 }
 
 export function parseSvizDisplayJson(json: string): SvizDisplayDocument {
-  if (new TextEncoder().encode(json).byteLength > MAX_SVIZ_JSON_BYTES) {
-    throw new SvizImportError(413, "sviz JSON must be 2 MiB or smaller.");
-  }
-
   let value: unknown;
   try {
     value = JSON.parse(json);
@@ -107,17 +102,22 @@ export function slugifySvizAsset(value: string) {
 
 export function renderSvizMarkdownEmbed(input: {
   assetSlug: string;
+  src?: string;
   visualizationId: string;
   caption: string;
 }) {
   const assetSlug = validateSlug(input.assetSlug);
+  const src = input.src ?? `/demos/sviz/${assetSlug}.json`;
+  if (!/^\/demos\/(?:sviz|r2)\/[a-z0-9\u4e00-\u9fa5/-]+\.json$/.test(src)) {
+    throw new SvizImportError(400, "Invalid demo asset URL.");
+  }
   const visualizationId = escapeHtmlAttribute(input.visualizationId);
   const caption = escapeHtmlAttribute(input.caption);
 
   return `<figure class="sviz-demo">
   <div class="sviz-demo-frame">
     <systems-viz-next
-      src="/demos/sviz/${assetSlug}.json"
+      src="${escapeHtmlAttribute(src)}"
       visualization-id="${visualizationId}"
       theme="auto"
     ></systems-viz-next>

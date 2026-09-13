@@ -87,7 +87,7 @@ const editableEntries = entries.map((entry) => ({
   <fieldset id="sviz-import-panel" class="editor-panel sviz-import-panel">
     <legend>添加 Demo</legend>
     <p class="meta">
-      导入由 sviz <code>compile()</code> 生成的 JSON。提交内容 PR 时，编辑器会把 JSON 保存为站点资源。
+      导入由 sviz <code>compile()</code> 生成的 JSON。预览后，插入或复制时会自动上传 Demo；文章仍通过 PR 发布。
     </p>
     <div class="sviz-import-actions">
       <button id="choose-sviz-json" type="button">添加 Demo</button>
@@ -102,7 +102,7 @@ const editableEntries = entries.map((entry) => ({
       </label>
       <label class="wide">
         可复制的 Markdown 嵌入内容
-        <textarea id="sviz-embed-snippet" rows="12" readonly spellcheck="false"></textarea>
+        <textarea id="sviz-embed-snippet" rows="12" readonly spellcheck="false" placeholder="点击插入或复制，上传后生成嵌入内容。"></textarea>
       </label>
       <div class="editor-actions wide">
         <button id="copy-sviz-snippet" type="button">复制嵌入内容</button>
@@ -263,7 +263,6 @@ const editableEntries = entries.map((entry) => ({
   import DOMPurify from "dompurify";
   import { previewMarkdown } from "@/lib/editor/markdown";
   import {
-    MAX_SVIZ_JSON_BYTES,
     parseSvizDisplayJson,
     renderSvizMarkdownEmbed,
     slugifySvizAsset,
@@ -359,7 +358,10 @@ const editableEntries = entries.map((entry) => ({
   let sessionState: EditorSession | null = null;
   let slugTouched = false;
   let currentSvizDocument: SvizDisplayDocument | null = null;
-  let currentSvizJson: string | null = null;
+  let currentSvizFile: File | null = null;
+  let uploadedSviz: { file: File; slug: string; src: string } | null = null;
+  let svizUploading = false;
+  let svizImportRevision = 0;
   let currentSvizPreviewUrl: string | null = null;
   let currentSvizAssetSlug = "";
 
@@ -414,7 +416,9 @@ const editableEntries = entries.map((entry) => ({
 
   function resetSvizImport() {
     currentSvizDocument = null;
-    currentSvizJson = null;
+    currentSvizFile = null;
+    uploadedSviz = null;
+    svizImportRevision += 1;
     currentSvizAssetSlug = "";
     clearSvizPreviewUrl();
     if (svizJsonField) svizJsonField.value = "";
@@ -432,7 +436,12 @@ const editableEntries = entries.map((entry) => ({
       svizAssetSlugField?.value ?? currentSvizDocument.visualization_id,
     );
     if (svizAssetSlugField) svizAssetSlugField.value = currentSvizAssetSlug;
+    if (!uploadedSviz || uploadedSviz.file !== currentSvizFile || uploadedSviz.slug !== currentSvizAssetSlug) {
+      svizEmbedSnippet.value = "";
+      return;
+    }
     svizEmbedSnippet.value = renderSvizMarkdownEmbed({
+      src: uploadedSviz.src,
       assetSlug: currentSvizAssetSlug,
       visualizationId: currentSvizDocument.visualization_id,
       caption: currentSvizDocument.title,
@@ -440,19 +449,16 @@ const editableEntries = entries.map((entry) => ({
   }
 
   async function importSvizFile(file: File) {
-    if (file.size > MAX_SVIZ_JSON_BYTES) {
-      throw new Error("sviz JSON 必须小于或等于 2 MiB。");
-    }
-
-    const document = parseSvizDisplayJson(await file.text());
-    const canonicalJson = `${JSON.stringify(document, null, 2)}\n`;
+    const revision = ++svizImportRevision;
+    const source = await file.text();
+    if (revision !== svizImportRevision) return;
+    const document = parseSvizDisplayJson(source);
     currentSvizDocument = document;
-    currentSvizJson = canonicalJson;
+    currentSvizFile = file;
+    uploadedSviz = null;
     currentSvizAssetSlug = slugifySvizAsset(document.visualization_id);
     clearSvizPreviewUrl();
-    currentSvizPreviewUrl = URL.createObjectURL(
-      new Blob([canonicalJson], { type: "application/json" }),
-    );
+    currentSvizPreviewUrl = URL.createObjectURL(file);
 
     if (svizAssetSlugField) svizAssetSlugField.value = currentSvizAssetSlug;
     updateSvizSnippet();
@@ -584,24 +590,6 @@ const editableEntries = entries.map((entry) => ({
     return markdown.replace(/^---\s*[\s\S]*?\s*---\s*/, "");
   }
 
-  function stripSvizEmbed(markdown: string) {
-    return markdown
-      .replace(/<figure\b[^>]*class=["'][^"']*\bsviz-demo\b[^"']*["'][^>]*>[\s\S]*?<\/figure>/g, "")
-      .replace(/<script\b[^>]*src=["'][^"']*systems-viz-next\.js["'][^>]*><\/script>/g, "");
-  }
-
-  function readSvizEmbed(markdown: string) {
-    const webComponent = markdown.match(/<systems-viz-next\b[\s\S]*?<\/systems-viz-next>/)?.[0];
-    if (webComponent) {
-      const src = webComponent.match(/\bsrc=["']([^"']+)["']/)?.[1];
-      const visualizationId = webComponent.match(/\bvisualization-id=["']([^"']+)["']/)?.[1];
-      const caption = markdown.match(/<figcaption>([\s\S]*?)<\/figcaption>/)?.[1];
-      if (src && visualizationId) return { src, visualizationId, caption };
-    }
-
-    return null;
-  }
-
   function setMarkdownStatus(markdown: string, status: "draft" | "staged" | "published") {
     const frontmatterMatch = markdown.match(/^---\s*([\s\S]*?)\s*---/);
     if (!frontmatterMatch) return markdown;
@@ -617,27 +605,15 @@ const editableEntries = entries.map((entry) => ({
   function renderMarkdownPreview(markdown: string, target: Element | null) {
     if (!target) return;
 
-    const embed = readSvizEmbed(markdown);
-    const html = previewMarkdown.parse(stripSvizEmbed(stripFrontmatter(markdown)), { async: false }) as string;
-    target.innerHTML = DOMPurify.sanitize(html);
-    if (embed) {
-      const figure = document.createElement("figure");
-      figure.className = "sviz-demo";
-      const frame = document.createElement("div");
-      frame.className = "sviz-demo-frame";
-      figure.append(frame);
-      appendSvizViewer(
-        frame,
-        currentSvizPreviewUrl ?? embed.src,
-        currentSvizDocument?.visualization_id ?? embed.visualizationId,
-      );
-      if (embed.caption) {
-        const caption = document.createElement("figcaption");
-        caption.textContent = embed.caption;
-        figure.append(caption);
-      }
-      target.append(figure);
-    }
+    const html = previewMarkdown.parse(stripFrontmatter(markdown), { async: false }) as string;
+    // Keep each viewer in its original position with its own URL and compiled ID.
+    // Scripts remain stripped; the editor already loads the bundled viewer runtime.
+    target.innerHTML = DOMPurify.sanitize(html, {
+      CUSTOM_ELEMENT_HANDLING: {
+        tagNameCheck: /^systems-viz-next$/,
+        attributeNameCheck: /^(src|visualization-id|theme|initial-cursor|shape-scale)$/,
+      },
+    });
   }
 
   function updateDraftPreview() {
@@ -743,8 +719,6 @@ const editableEntries = entries.map((entry) => ({
     slug?: string | null;
     markdown: string;
     baseSha?: string | null;
-    svizJson?: string | null;
-    svizAssetSlug?: string | null;
     intent: "draft" | "stage" | "publish";
     statusTarget: Element | null;
     conflictTarget: HTMLElement | null;
@@ -771,8 +745,6 @@ const editableEntries = entries.map((entry) => ({
           collection: input.collection,
           slug: input.slug,
           markdown: input.markdown,
-          svizJson: input.svizJson,
-          svizAssetSlug: input.svizAssetSlug,
           baseSha: input.baseSha,
           intent: input.intent,
         }),
@@ -805,6 +777,8 @@ const editableEntries = entries.map((entry) => ({
       resetSvizImport();
       return;
     }
+    resetSvizImport();
+    setNotice(svizImportStatus, "正在读取并验证 Demo...");
     try {
       await importSvizFile(file);
     } catch (error) {
@@ -818,17 +792,61 @@ const editableEntries = entries.map((entry) => ({
   });
   clearSvizImport?.addEventListener("click", resetSvizImport);
   svizAssetSlugField?.addEventListener("change", updateSvizSnippet);
+  async function ensureSvizUploaded() {
+    if (!currentSvizFile || !currentSvizDocument) throw new Error("请先选择 Demo JSON。");
+    if (!sessionState?.authenticated || !sessionState.csrfToken) throw new Error("请先使用 GitHub 登录。");
+    updateSvizSnippet();
+    if (uploadedSviz?.file === currentSvizFile && uploadedSviz.slug === currentSvizAssetSlug) return;
+    svizUploading = true;
+    for (const control of [chooseSvizJson, clearSvizImport, svizJsonField, svizAssetSlugField, copySvizSnippet, insertSvizSnippet]) {
+      control?.setAttribute("disabled", "");
+    }
+    setNotice(svizImportStatus, "正在上传 Demo，请稍候...");
+    try {
+      const response = await fetch(`/api/editor/demos?slug=${encodeURIComponent(currentSvizAssetSlug)}`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-csrf-token": sessionState.csrfToken },
+        // Send the original file, avoiding a second large JSON envelope in the PR request.
+        body: currentSvizFile,
+      });
+      const data = await response.json() as { src?: string; visualizationId?: string; error?: string };
+      if (!response.ok || !data.src) throw new Error(data.error ?? "Demo 上传失败，请重试。");
+      if (data.visualizationId !== currentSvizDocument.visualization_id) throw new Error("上传的 Demo ID 不匹配，请重试。");
+      uploadedSviz = { file: currentSvizFile, slug: currentSvizAssetSlug, src: data.src };
+      updateSvizSnippet();
+    } finally {
+      svizUploading = false;
+      for (const control of [chooseSvizJson, clearSvizImport, svizJsonField, svizAssetSlugField, copySvizSnippet, insertSvizSnippet]) {
+        control?.removeAttribute("disabled");
+      }
+    }
+  }
+
   copySvizSnippet?.addEventListener("click", async () => {
+    if (svizUploading) return;
+    try {
+      await ensureSvizUploaded();
+    } catch (error) {
+      setNotice(svizImportStatus, error instanceof Error ? error.message : "Demo 上传失败，请重试。", true);
+      return;
+    }
     if (!svizEmbedSnippet?.value) return;
     try {
       await navigator.clipboard.writeText(svizEmbedSnippet.value);
-      setNotice(svizImportStatus, "嵌入内容已复制。");
+      setNotice(svizImportStatus, "Demo 已上传，嵌入内容已复制。");
     } catch {
       svizEmbedSnippet.select();
-      setNotice(svizImportStatus, "浏览器未允许自动复制；嵌入内容已选中，请手动复制。", true);
+      setNotice(svizImportStatus, "Demo 已上传；嵌入内容已选中，请手动复制。", true);
     }
   });
-  insertSvizSnippet?.addEventListener("click", () => {
+  insertSvizSnippet?.addEventListener("click", async () => {
+    if (svizUploading) return;
+    try {
+      await ensureSvizUploaded();
+    } catch (error) {
+      setNotice(svizImportStatus, error instanceof Error ? error.message : "Demo 上传失败，请重试。", true);
+      return;
+    }
     const snippet = svizEmbedSnippet?.value;
     if (!snippet) return;
 
@@ -839,7 +857,7 @@ const editableEntries = entries.map((entry) => ({
       bodyField.value = `${bodyField.value.trimEnd()}${bodyField.value.trim() ? "\n\n" : ""}${snippet}`;
       updateDraft();
     }
-    setNotice(svizImportStatus, "嵌入内容已插入当前 Markdown。提交 PR 时会同时保存 JSON 资源。");
+    setNotice(svizImportStatus, "Demo 已上传，嵌入内容已插入当前 Markdown。可继续添加其他 Demo。");
   });
   slugField?.addEventListener("input", () => {
     slugTouched = true;
@@ -867,8 +885,6 @@ const editableEntries = entries.map((entry) => ({
       collection: collectionField?.value ?? "posts",
       slug: slugField?.value.trim() || null,
       markdown: output.value,
-      svizJson: currentSvizJson,
-      svizAssetSlug: currentSvizAssetSlug || null,
       intent: "draft",
       statusTarget: draftActionStatus,
       conflictTarget: draftConflictMessage,
@@ -884,8 +900,6 @@ const editableEntries = entries.map((entry) => ({
       collection: collectionField?.value ?? "posts",
       slug: slugField?.value.trim() || null,
       markdown: output.value,
-      svizJson: currentSvizJson,
-      svizAssetSlug: currentSvizAssetSlug || null,
       intent: "stage",
       statusTarget: draftActionStatus,
       conflictTarget: draftConflictMessage,
@@ -902,8 +916,6 @@ const editableEntries = entries.map((entry) => ({
       collection: collectionField?.value ?? "posts",
       slug: slugField?.value.trim() || null,
       markdown: output.value,
-      svizJson: currentSvizJson,
-      svizAssetSlug: currentSvizAssetSlug || null,
       intent: "publish",
       statusTarget: draftActionStatus,
       conflictTarget: draftConflictMessage,
@@ -920,8 +932,6 @@ const editableEntries = entries.map((entry) => ({
       slug: currentExistingSlug,
       markdown: existingMarkdownEditor.value,
       baseSha: currentExistingBaseSha,
-      svizJson: currentSvizJson,
-      svizAssetSlug: currentSvizAssetSlug || null,
       intent: "draft",
       statusTarget: markdownActionStatus,
       conflictTarget: existingConflictMessage,
@@ -938,8 +948,6 @@ const editableEntries = entries.map((entry) => ({
       slug: currentExistingSlug,
       markdown: existingMarkdownEditor.value,
       baseSha: currentExistingBaseSha,
-      svizJson: currentSvizJson,
-      svizAssetSlug: currentSvizAssetSlug || null,
       intent: "stage",
       statusTarget: markdownActionStatus,
       conflictTarget: existingConflictMessage,
@@ -956,8 +964,6 @@ const editableEntries = entries.map((entry) => ({
       slug: currentExistingSlug,
       markdown: existingMarkdownEditor.value,
       baseSha: currentExistingBaseSha,
-      svizJson: currentSvizJson,
-      svizAssetSlug: currentSvizAssetSlug || null,
       intent: "publish",
       statusTarget: markdownActionStatus,
       conflictTarget: existingConflictMessage,

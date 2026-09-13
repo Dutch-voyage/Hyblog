@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  MAX_SVIZ_JSON_BYTES,
   SvizImportError,
   parseSvizDisplayJson,
   prepareSvizAsset,
@@ -45,10 +44,15 @@ describe("sviz JSON imports", () => {
     ).toThrow("compiled checkpoint");
   });
 
-  it("enforces the upload size limit", () => {
-    expect(() => parseSvizDisplayJson(" ".repeat(MAX_SVIZ_JSON_BYTES + 1))).toThrow(
-      "2 MiB",
+  it("accepts compiled demos larger than 30 MiB", () => {
+    const description = "x".repeat(31 * 1024 * 1024);
+    const prepared = prepareSvizAsset(
+      JSON.stringify({ ...validDisplay, description }),
+      "large-demo",
     );
+
+    expect(prepared.document.description).toBe(description);
+    expect(JSON.parse(prepared.content).description).toBe(description);
   });
 
   it("creates a Markdown-compatible embed snippet", () => {

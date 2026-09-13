@@ -4,7 +4,6 @@ import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const MAX_JSON_BYTES = 2 * 1024 * 1024;
 const DEFAULT_APP_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 function usage() {
@@ -60,10 +59,6 @@ function isRecord(value) {
 }
 
 function parseDisplayJson(source) {
-  if (Buffer.byteLength(source, "utf8") > MAX_JSON_BYTES) {
-    throw new Error("sviz JSON must be 2 MiB or smaller.");
-  }
-
   let document;
   try {
     document = JSON.parse(source);

@@ -30,6 +30,8 @@
   },
   "devDependencies": {
     "@astrojs/check": "latest",
+    "@cloudflare/workers-types": "^4.20260702.1",
+    "smol-toml": "^1.8.0",
     "typescript": "latest",
     "vitest": "^4.1.5"
   }
