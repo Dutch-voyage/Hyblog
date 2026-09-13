@@ -1,5 +1,8 @@
+import { readEditorEnv } from "./env";
+
 export const editorSessionCookie = "hyblog_editor_session";
 export const oauthStateCookie = "hyblog_oauth_state";
+export const editorSessionMaxAge = 60 * 60 * 24 * 7;
 
 export interface EditorSession {
   token: string;
@@ -62,16 +65,8 @@ async function getSessionKey(secret: string) {
   return getCrypto().subtle.importKey("raw", digest, "AES-GCM", false, ["encrypt", "decrypt"]);
 }
 
-function readRuntimeEnv(name: string) {
-  const processEnv = (globalThis as typeof globalThis & {
-    process?: { env?: Record<string, string | undefined> };
-  }).process?.env;
-
-  return import.meta.env[name] ?? processEnv?.[name];
-}
-
 export function getRequiredSessionSecret() {
-  const secret = readRuntimeEnv("SESSION_SECRET");
+  const secret = readEditorEnv("SESSION_SECRET");
   if (!secret || secret.length < 32) {
     throw new Error("SESSION_SECRET must be set to at least 32 characters.");
   }
@@ -101,6 +96,9 @@ export async function unsealSession(value: string, secret: string): Promise<Edit
     );
     const parsed = JSON.parse(decoder.decode(plaintext)) as { version: 2; session: EditorSession };
     if (parsed.version !== 2 || !parsed.session?.token || !parsed.session.login) return null;
+    const createdAt = Date.parse(parsed.session.createdAt);
+    const age = Date.now() - createdAt;
+    if (!Number.isFinite(createdAt) || age < 0 || age >= editorSessionMaxAge * 1000) return null;
     return parsed.session;
   } catch {
     return null;
@@ -140,7 +138,7 @@ export function getCookieOptions(url: URL, maxAge?: number) {
 
 export async function setEditorSessionCookie(cookies: CookieWriter, url: URL, session: EditorSession) {
   const sealed = await sealSession(session, getRequiredSessionSecret());
-  cookies.set(editorSessionCookie, sealed, getCookieOptions(url, 60 * 60 * 24 * 7));
+  cookies.set(editorSessionCookie, sealed, getCookieOptions(url, editorSessionMaxAge));
 }
 
 export async function readEditorSession(cookies: CookieWriter) {
@@ -167,5 +165,7 @@ export function clearOAuthStateCookie(cookies: CookieWriter, url: URL) {
 
 export function sanitizeReturnTo(value: string | null) {
   if (!value || !value.startsWith("/") || value.startsWith("//")) return "/editor/";
+  // Backslashes and control characters are normalized by browsers when redirecting.
+  if (/[\\\u0000-\u001f\u007f]/u.test(value)) return "/editor/";
   return value;
 }

@@ -1,7 +1,7 @@
 export const editorCollections = ["posts", "notes"] as const;
 
 export type EditorCollection = (typeof editorCollections)[number];
-export type ProposalIntent = "draft" | "publish";
+export type ProposalIntent = "draft" | "stage" | "publish";
 
 export interface ParsedMarkdown {
   frontmatter: Record<string, unknown>;
@@ -15,7 +15,7 @@ export interface PreparedEditorContent {
   extension: "md" | "mdx";
   markdown: string;
   title: string;
-  status: "draft" | "published";
+  status: "draft" | "staged" | "published";
 }
 
 export class EditorContentError extends Error {
@@ -163,7 +163,7 @@ function ensureOptionalUrl(frontmatter: Record<string, unknown>, key: string) {
   }
 }
 
-export function setMarkdownStatus(markdown: string, status: "draft" | "published") {
+export function setMarkdownStatus(markdown: string, status: "draft" | "staged" | "published") {
   const frontmatterMatch = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!frontmatterMatch) {
     throw new EditorContentError(400, "Markdown must start with YAML frontmatter.");
@@ -187,7 +187,7 @@ export function prepareEditorContent(input: {
     throw new EditorContentError(400, "Unsupported content collection.");
   }
 
-  const intendedStatus = input.intent === "publish" ? "published" : "draft";
+  const intendedStatus = input.intent === "publish" ? "published" : input.intent === "stage" ? "staged" : "draft";
   const markdown = setMarkdownStatus(input.markdown, intendedStatus);
   const parsed = parseMarkdown(markdown);
   const title = ensureString(parsed.frontmatter, "title");
@@ -199,8 +199,8 @@ export function prepareEditorContent(input: {
   ensureOptionalUrl(parsed.frontmatter, "canonicalUrl");
 
   const status = parsed.frontmatter.status;
-  if (status !== "draft" && status !== "published") {
-    throw new EditorContentError(400, 'Frontmatter field "status" must be draft or published.');
+  if (status !== "draft" && status !== "staged" && status !== "published") {
+    throw new EditorContentError(400, 'Frontmatter field "status" must be draft, staged, or published.');
   }
 
   const slug = validateSlug(input.slug?.trim() || slugifyTitle(title));

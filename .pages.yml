@@ -157,7 +157,7 @@ content:
       - { name: updatedDate, label: Updated Date, type: date, required: false }
       - { name: authors, label: Authors, type: string, list: true, required: false }
       - { name: tags, label: Tags, type: string, list: true, required: false }
-      - { name: status, label: Status, type: select, options: ["draft", "published"], required: true }
+      - { name: status, label: Status, type: select, options: ["draft", "staged", "published"], required: true }
       - { name: cover, label: Cover image, type: image, required: false }
       - { name: canonicalUrl, label: Canonical URL, type: string, required: false }
       - { name: formats, label: Formats, type: string, list: true, required: false }
@@ -182,7 +182,7 @@ content:
       - { name: pubDate, label: Publish Date, type: date, required: true }
       - { name: authors, label: Authors, type: string, list: true, required: false }
       - { name: tags, label: Tags, type: string, list: true, required: false }
-      - { name: status, label: Status, type: select, options: ["draft", "published"], required: true }
+      - { name: status, label: Status, type: select, options: ["draft", "staged", "published"], required: true }
       - { name: cover, label: Cover image, type: image, required: false }
       - { name: canonicalUrl, label: Canonical URL, type: string, required: false }
       - { name: formats, label: Formats, type: string, list: true, required: false }

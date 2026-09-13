@@ -27,10 +27,6 @@ export function getDraftPreviewHref(entry: BlogEntry) {
   return `/drafts/${collectionPaths[entry.collection]}/${entry.id}/`;
 }
 
-export function canPreviewDrafts() {
-  return import.meta.env.DEV || import.meta.env.ENABLE_DRAFT_PREVIEWS === "true";
-}
-
 export function getEntrySourcePath(entry: BlogEntry) {
   return `hybrid-blog-app/src/content/${collectionPaths[entry.collection]}/${entry.id}.md`;
 }
@@ -55,7 +51,7 @@ export async function getPublishedEntries() {
 
 export async function getDraftEntries() {
   const entries = await getAllEntries();
-  return entries.filter((entry) => entry.data.status === "draft");
+  return entries.filter((entry) => entry.data.status !== "published");
 }
 
 export function getAllTags(entries: BlogEntry[]) {

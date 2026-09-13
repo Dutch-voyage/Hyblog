@@ -1,3 +1,5 @@
+import { readEditorEnv as readEnv } from "./env";
+
 export interface EditorGitHubConfig {
   clientId: string;
   clientSecret: string;
@@ -5,10 +7,6 @@ export interface EditorGitHubConfig {
   repo: string;
   baseBranch: string;
   callbackUrl?: string;
-}
-
-function readEnv(name: string) {
-  return import.meta.env[name] ?? process.env[name];
 }
 
 function requiredEnv(name: string) {

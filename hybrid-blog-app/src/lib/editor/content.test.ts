@@ -47,6 +47,19 @@ describe("editor content validation", () => {
     expect(prepared.markdown).toContain('status: "published"');
   });
 
+  it.each(["draft", "stage"] as const)("moves published content back to %s without changing its body or path", (intent) => {
+    const prepared = prepareEditorContent({
+      collection: "posts",
+      slug: "hello-editor",
+      markdown: validMarkdown.replace('status: "draft"', 'status: "published"'),
+      intent,
+    });
+    expect(prepared.status).toBe(intent === "stage" ? "staged" : "draft");
+    expect(prepared.markdown).not.toContain('status: "published"');
+    expect(prepared.markdown).toContain("Body text.");
+    expect(prepared.path).toBe("hybrid-blog-app/src/content/posts/hello-editor.md");
+  });
+
   it("rejects path traversal slugs", () => {
     expect(() => validateSlug("../secret")).toThrow(EditorContentError);
     expect(() => validateSlug("bad/path")).toThrow(EditorContentError);

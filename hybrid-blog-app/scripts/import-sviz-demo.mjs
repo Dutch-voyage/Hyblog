@@ -120,7 +120,6 @@ function renderMarkdownEmbed(input) {
       src="/demos/sviz/${escapeAttribute(input.slug)}.json"
       visualization-id="${escapeAttribute(input.visualizationId)}"
       theme="auto"
-      style="--sv-bg: var(--background); --sv-panel: var(--surface); --sv-panel-soft: color-mix(in srgb, var(--surface) 68%, var(--accent-soft)); --sv-text: var(--text); --sv-muted: var(--muted); --sv-border: var(--border); --sv-primary: var(--accent); --sv-selection: var(--accent);"
     ></systems-viz-next>
   </div>
   <figcaption>${escapeAttribute(input.caption)}</figcaption>

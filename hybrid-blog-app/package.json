@@ -22,7 +22,11 @@
     "astro": "latest",
     "browsercc": "^0.1.1",
     "dompurify": "^3.4.2",
-    "marked": "^18.0.3"
+    "katex": "^0.16.47",
+    "marked": "^18.0.3",
+    "marked-katex-extension": "^5.1.12",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0"
   },
   "devDependencies": {
     "@astrojs/check": "latest",

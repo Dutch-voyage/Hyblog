@@ -1,0 +1,14 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+
+export const prerender = true;
+---
+
+<BaseLayout title="页面不存在" description="没有找到这个页面。">
+  <section class="hero">
+    <p class="eyebrow">404</p>
+    <h1>页面不存在</h1>
+    <p class="lede">这个链接没有可公开访问的内容。</p>
+    <a href="/">返回博客</a>
+  </section>
+</BaseLayout>

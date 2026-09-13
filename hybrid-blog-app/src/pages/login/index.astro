@@ -1,0 +1,30 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { getEditorEnvironmentStatus } from "@/lib/editor/config";
+import { readEditorSession, sanitizeReturnTo } from "@/lib/editor/session";
+
+export const prerender = false;
+const returnTo = sanitizeReturnTo(Astro.url.searchParams.get("returnTo") ?? "/editor/workspace/");
+if (await readEditorSession(Astro.cookies)) return Astro.redirect(returnTo);
+const { configured } = getEditorEnvironmentStatus();
+---
+
+<BaseLayout title="GitHub 登录" description="登录以访问编辑工作台。">
+  <section class="hero">
+    <p class="eyebrow">Editor workspace</p>
+    <h1>使用 GitHub 登录</h1>
+    <p class="lede">登录后可查看草稿、待发布内容，并继续编辑。</p>
+    {configured ? (
+      <a class="login-button" href={`/api/auth/github/login?returnTo=${encodeURIComponent(returnTo)}`}>
+        使用 GitHub 登录 / Sign in with GitHub
+      </a>
+    ) : (
+      <p role="status">GitHub 登录尚未配置，请联系站点管理员完成配置。</p>
+    )}
+    <p><a href="/">返回博客</a></p>
+  </section>
+</BaseLayout>
+
+<style>
+  .login-button { display: inline-block; padding: 0.8rem 1.2rem; border-radius: 0.6rem; background: var(--accent); color: var(--background); text-decoration: none; font-weight: 700; }
+</style>
