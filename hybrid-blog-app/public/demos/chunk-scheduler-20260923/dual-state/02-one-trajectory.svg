@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="900" viewBox="0 0 1000 900" role="img" aria-labelledby="title desc"><title id="title">沿着一条轨迹看：每一步改变哪一维？</title><desc id="desc">从一次 LLM 执行，经过 tool 等待与缓存搬移，再进入下一次 LLM 执行。</desc><rect width="1000" height="900" rx="14" fill="white"/><g font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif">
+<text x="30" y="40" fill="#24374b" font-size="26" text-anchor="start" font-weight="700">沿着一条轨迹看：每一步改变哪一维？</text>
+<text x="30" y="74" fill="#66798d" font-size="18" text-anchor="start" font-weight="400">从一次 LLM 执行，经过 tool 等待与缓存搬移，再进入下一次 LLM 执行。</text>
+<rect x="30" y="101" width="940" height="66" rx="8" fill="#edf2f7" stroke="none"/>
+<text x="55" y="129" fill="#24374b" font-size="18" text-anchor="start" font-weight="600">到达这一步的事件</text>
+<text x="407" y="129" fill="#24374b" font-size="18" text-anchor="middle" font-weight="600">E · 执行状态</text>
+<text x="650" y="129" fill="#24374b" font-size="18" text-anchor="middle" font-weight="600">C · 有效缓存副本</text>
+<text x="909" y="129" fill="#24374b" font-size="18" text-anchor="middle" font-weight="600">执行中</text>
+<text x="592" y="154" fill="#2563a6" font-size="16" text-anchor="middle" font-weight="400">GPU</text>
+<text x="705" y="154" fill="#7450a5" font-size="16" text-anchor="middle" font-weight="400">Host</text>
+<text x="909" y="154" fill="#66798d" font-size="16" text-anchor="middle" font-weight="400">slot</text>
+<rect x="30" y="181" width="940" height="74" rx="8" fill="#fafbfd" stroke="none"/>
+<text x="50" y="224" fill="#24374b" font-size="19" text-anchor="start" font-weight="400">① 当前 LLM request 执行中</text>
+<rect x="330" y="193" width="154" height="50" rx="8" fill="#f0f3f6" stroke="#d6dfe7"/>
+<text x="407" y="225" fill="#24374b" font-size="21" text-anchor="middle" font-weight="400">X · 执行</text>
+<rect x="520" y="188" width="310" height="60" rx="8" fill="#f9f7fb" stroke="#dfd7e9"/>
+<rect x="549" y="199" width="86" height="36" rx="8" fill="#e2ebf8" stroke="none"/>
+<text x="592" y="224" fill="#2563a6" font-size="18" text-anchor="middle" font-weight="400">有效</text>
+<rect x="662" y="199" width="86" height="36" rx="8" fill="#eef1f4" stroke="none"/>
+<text x="705" y="224" fill="#66798d" font-size="18" text-anchor="middle" font-weight="400">—</text>
+<text x="797" y="225" fill="#7450a5" font-size="20" text-anchor="middle" font-weight="600">G</text>
+<text x="909" y="225" fill="#2563a6" font-size="23" text-anchor="middle" font-weight="600">1</text>
+<text x="50" y="310" fill="#24374b" font-size="19" text-anchor="start" font-weight="400">② 本轮结束，开始等 tool</text>
+<rect x="330" y="279" width="154" height="50" rx="8" fill="#e7f1fc" stroke="#2563a6"/>
+<text x="407" y="311" fill="#2563a6" font-size="21" text-anchor="middle" font-weight="600">W · 等待</text>
+<rect x="520" y="274" width="310" height="60" rx="8" fill="#f9f7fb" stroke="#dfd7e9"/>
+<rect x="549" y="285" width="86" height="36" rx="8" fill="#e2ebf8" stroke="none"/>
+<text x="592" y="310" fill="#2563a6" font-size="18" text-anchor="middle" font-weight="400">有效</text>
+<rect x="662" y="285" width="86" height="36" rx="8" fill="#eef1f4" stroke="none"/>
+<text x="705" y="310" fill="#66798d" font-size="18" text-anchor="middle" font-weight="400">—</text>
+<text x="797" y="311" fill="#7450a5" font-size="20" text-anchor="middle" font-weight="600">G</text>
+<text x="909" y="311" fill="#66798d" font-size="23" text-anchor="middle" font-weight="600">0</text>
+<rect x="30" y="353" width="940" height="74" rx="8" fill="#fafbfd" stroke="none"/>
+<text x="50" y="396" fill="#24374b" font-size="19" text-anchor="start" font-weight="400">③ GPU → Host 副本完成</text>
+<rect x="330" y="365" width="154" height="50" rx="8" fill="#f0f3f6" stroke="#d6dfe7"/>
+<text x="407" y="397" fill="#24374b" font-size="21" text-anchor="middle" font-weight="400">W · 等待</text>
+<rect x="520" y="360" width="310" height="60" rx="8" fill="#f3edf9" stroke="#7450a5"/>
+<rect x="549" y="371" width="86" height="36" rx="8" fill="#e2ebf8" stroke="none"/>
+<text x="592" y="396" fill="#2563a6" font-size="18" text-anchor="middle" font-weight="400">有效</text>
+<rect x="662" y="371" width="86" height="36" rx="8" fill="#eae0f5" stroke="none"/>
+<text x="705" y="396" fill="#7450a5" font-size="18" text-anchor="middle" font-weight="400">有效</text>
+<text x="797" y="397" fill="#7450a5" font-size="20" text-anchor="middle" font-weight="600">GH</text>
+<text x="909" y="397" fill="#66798d" font-size="23" text-anchor="middle" font-weight="600">0</text>
+<text x="50" y="482" fill="#24374b" font-size="19" text-anchor="start" font-weight="400">④ 回收 GPU 副本</text>
+<rect x="330" y="451" width="154" height="50" rx="8" fill="#f0f3f6" stroke="#d6dfe7"/>
+<text x="407" y="483" fill="#24374b" font-size="21" text-anchor="middle" font-weight="400">W · 等待</text>
+<rect x="520" y="446" width="310" height="60" rx="8" fill="#f3edf9" stroke="#7450a5"/>
+<rect x="549" y="457" width="86" height="36" rx="8" fill="#eef1f4" stroke="none"/>
+<text x="592" y="482" fill="#66798d" font-size="18" text-anchor="middle" font-weight="400">—</text>
+<rect x="662" y="457" width="86" height="36" rx="8" fill="#eae0f5" stroke="none"/>
+<text x="705" y="482" fill="#7450a5" font-size="18" text-anchor="middle" font-weight="400">有效</text>
+<text x="797" y="483" fill="#7450a5" font-size="20" text-anchor="middle" font-weight="600">H</text>
+<text x="909" y="483" fill="#66798d" font-size="23" text-anchor="middle" font-weight="600">0</text>
+<rect x="30" y="525" width="940" height="74" rx="8" fill="#fafbfd" stroke="none"/>
+<text x="50" y="568" fill="#24374b" font-size="19" text-anchor="start" font-weight="400">⑤ tool 返回，新输入就绪</text>
+<rect x="330" y="537" width="154" height="50" rx="8" fill="#e7f1fc" stroke="#2563a6"/>
+<text x="407" y="569" fill="#2563a6" font-size="21" text-anchor="middle" font-weight="600">R · 就绪</text>
+<rect x="520" y="532" width="310" height="60" rx="8" fill="#f9f7fb" stroke="#dfd7e9"/>
+<rect x="549" y="543" width="86" height="36" rx="8" fill="#eef1f4" stroke="none"/>
+<text x="592" y="568" fill="#66798d" font-size="18" text-anchor="middle" font-weight="400">—</text>
+<rect x="662" y="543" width="86" height="36" rx="8" fill="#eae0f5" stroke="none"/>
+<text x="705" y="568" fill="#7450a5" font-size="18" text-anchor="middle" font-weight="400">有效</text>
+<text x="797" y="569" fill="#7450a5" font-size="20" text-anchor="middle" font-weight="600">H</text>
+<text x="909" y="569" fill="#66798d" font-size="23" text-anchor="middle" font-weight="600">0</text>
+<text x="50" y="654" fill="#24374b" font-size="19" text-anchor="start" font-weight="400">⑥ Promote 完成</text>
+<rect x="330" y="623" width="154" height="50" rx="8" fill="#f0f3f6" stroke="#d6dfe7"/>
+<text x="407" y="655" fill="#24374b" font-size="21" text-anchor="middle" font-weight="400">R · 就绪</text>
+<rect x="520" y="618" width="310" height="60" rx="8" fill="#f3edf9" stroke="#7450a5"/>
+<rect x="549" y="629" width="86" height="36" rx="8" fill="#e2ebf8" stroke="none"/>
+<text x="592" y="654" fill="#2563a6" font-size="18" text-anchor="middle" font-weight="400">有效</text>
+<rect x="662" y="629" width="86" height="36" rx="8" fill="#eae0f5" stroke="none"/>
+<text x="705" y="654" fill="#7450a5" font-size="18" text-anchor="middle" font-weight="400">有效</text>
+<text x="797" y="655" fill="#7450a5" font-size="20" text-anchor="middle" font-weight="600">GH</text>
+<text x="909" y="655" fill="#66798d" font-size="23" text-anchor="middle" font-weight="600">0</text>
+<rect x="30" y="697" width="940" height="74" rx="8" fill="#fafbfd" stroke="none"/>
+<text x="50" y="740" fill="#24374b" font-size="19" text-anchor="start" font-weight="400">⑦ 获得执行名额，Run</text>
+<rect x="330" y="709" width="154" height="50" rx="8" fill="#e7f1fc" stroke="#2563a6"/>
+<text x="407" y="741" fill="#2563a6" font-size="21" text-anchor="middle" font-weight="600">X · 执行</text>
+<rect x="520" y="704" width="310" height="60" rx="8" fill="#f9f7fb" stroke="#dfd7e9"/>
+<rect x="549" y="715" width="86" height="36" rx="8" fill="#e2ebf8" stroke="none"/>
+<text x="592" y="740" fill="#2563a6" font-size="18" text-anchor="middle" font-weight="400">有效</text>
+<rect x="662" y="715" width="86" height="36" rx="8" fill="#eae0f5" stroke="none"/>
+<text x="705" y="740" fill="#7450a5" font-size="18" text-anchor="middle" font-weight="400">有效</text>
+<text x="797" y="741" fill="#7450a5" font-size="20" text-anchor="middle" font-weight="600">GH</text>
+<text x="909" y="741" fill="#2563a6" font-size="23" text-anchor="middle" font-weight="600">1</text>
+<text x="45" y="820" fill="#24374b" font-size="19" text-anchor="start" font-weight="400">蓝色边框：执行状态改变    紫色边框：缓存位置改变</text>
+<text x="45" y="855" fill="#24374b" font-size="18" text-anchor="start" font-weight="400">② 归还 slot，GPU 前缀仍在；⑤ 输入就绪，前缀仍在 Host；⑥ 恢复完成，尚未 Run。</text>
+<text x="45" y="884" fill="#66798d" font-size="17" text-anchor="start" font-weight="400">图中 slot 只显示正在执行的名额；调度账本还会计入预留名额。</text>
+</g></svg>

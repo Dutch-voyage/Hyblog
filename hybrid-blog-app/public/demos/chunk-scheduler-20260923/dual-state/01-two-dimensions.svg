@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="620" viewBox="0 0 1000 620" role="img" aria-labelledby="title desc"><title id="title">Dual state：同一个候选，同时回答两个问题</title><desc id="desc">候选关联一条顺序轨迹和一个可复用的 session；状态写成 S = (E, C)。</desc><rect width="1000" height="620" rx="14" fill="white"/><g font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif">
+<text x="30" y="40" fill="#24374b" font-size="26" text-anchor="start" font-weight="700">Dual state：同一个候选，同时回答两个问题</text>
+<text x="30" y="74" fill="#66798d" font-size="18" text-anchor="start" font-weight="400">候选关联一条顺序轨迹和一个可复用的 session；状态写成 S = (E, C)。</text>
+<rect x="30" y="105" width="940" height="172" rx="8" fill="#f0f6fc" stroke="none"/>
+<text x="50" y="137" fill="#2563a6" font-size="22" text-anchor="start" font-weight="700">E · 执行状态</text>
+<text x="270" y="137" fill="#2563a6" font-size="21" text-anchor="start" font-weight="400">当前 LLM 请求走到了哪一步？</text>
+<rect x="55" y="158" width="280" height="97" rx="8" fill="white" stroke="#c9d9e9"/>
+<text x="71" y="190" fill="#2563a6" font-size="22" text-anchor="start" font-weight="600">W  等待输入</text>
+<text x="71" y="225" fill="#24374b" font-size="18" text-anchor="start" font-weight="400">例如正在等待 tool 返回</text>
+<rect x="360" y="158" width="280" height="97" rx="8" fill="white" stroke="#c9d9e9"/>
+<text x="376" y="190" fill="#2563a6" font-size="22" text-anchor="start" font-weight="600">R  输入就绪</text>
+<text x="376" y="225" fill="#24374b" font-size="18" text-anchor="start" font-weight="400">等待缓存准备与执行准入</text>
+<rect x="665" y="158" width="280" height="97" rx="8" fill="white" stroke="#c9d9e9"/>
+<text x="681" y="190" fill="#2563a6" font-size="22" text-anchor="start" font-weight="600">X  正在执行</text>
+<text x="681" y="225" fill="#24374b" font-size="18" text-anchor="start" font-weight="400">当前 LLM 请求占用 slot</text>
+<rect x="30" y="297" width="940" height="173" rx="8" fill="#f6f2fa" stroke="none"/>
+<text x="50" y="330" fill="#7450a5" font-size="22" text-anchor="start" font-weight="700">C · 缓存状态</text>
+<text x="270" y="330" fill="#7450a5" font-size="21" text-anchor="start" font-weight="400">session 的有效前缀副本在哪里？</text>
+<rect x="55" y="350" width="210" height="97" rx="8" fill="white" stroke="#dbcee9"/>
+<text x="160" y="382" fill="#7450a5" font-size="25" text-anchor="middle" font-weight="600">∅</text>
+<text x="160" y="420" fill="#24374b" font-size="18" text-anchor="middle" font-weight="400">两层均无有效副本</text>
+<rect x="285" y="350" width="210" height="97" rx="8" fill="white" stroke="#dbcee9"/>
+<text x="390" y="382" fill="#7450a5" font-size="25" text-anchor="middle" font-weight="600">G</text>
+<text x="390" y="420" fill="#24374b" font-size="18" text-anchor="middle" font-weight="400">仅 GPU</text>
+<rect x="515" y="350" width="210" height="97" rx="8" fill="white" stroke="#dbcee9"/>
+<text x="620" y="382" fill="#7450a5" font-size="25" text-anchor="middle" font-weight="600">H</text>
+<text x="620" y="420" fill="#24374b" font-size="18" text-anchor="middle" font-weight="400">仅 Host</text>
+<rect x="745" y="350" width="210" height="97" rx="8" fill="white" stroke="#dbcee9"/>
+<text x="850" y="382" fill="#7450a5" font-size="25" text-anchor="middle" font-weight="600">GH</text>
+<text x="850" y="420" fill="#24374b" font-size="18" text-anchor="middle" font-weight="400">GPU 与 Host 都有</text>
+<text x="50" y="514" fill="#2563a6" font-size="23" text-anchor="start" font-weight="700">(R, H)</text>
+<text x="200" y="514" fill="#24374b" font-size="20" text-anchor="start" font-weight="400">输入已到；前缀在 Host，先恢复到 GPU，再等待准入。</text>
+<text x="50" y="555" fill="#7450a5" font-size="23" text-anchor="start" font-weight="700">(W, G)</text>
+<text x="200" y="555" fill="#24374b" font-size="20" text-anchor="start" font-weight="400">正在等 tool；GPU 仍保留前缀，此时没有执行中的请求。</text>
+<text x="50" y="596" fill="#2563a6" font-size="23" text-anchor="start" font-weight="700">(R, GH)</text>
+<text x="200" y="596" fill="#24374b" font-size="20" text-anchor="start" font-weight="400">输入与 GPU 前缀已就绪；获得执行名额后进入 X。</text>
+</g></svg>

@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="960" viewBox="0 0 1000 960" role="img" aria-labelledby="title desc">
+<title id="title">02  第一版：Proxy 发起，两次握手</title><desc id="desc">一个控制轮依次经过：观测同步 → 决策 → 安装确认 → 数据交付。</desc>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9" fill="#2563a6"/></marker><marker id="reply" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9" fill="#167568"/></marker></defs>
+<rect width="1000" height="960" rx="14" fill="#fff"/>
+<g font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif">
+<text x="30" y="40" font-size="26" fill="#24374b" text-anchor="start" font-weight="700">02  第一版：Proxy 发起，两次握手</text>
+<text x="30" y="74" font-size="18" fill="#65788c" text-anchor="start" font-weight="400">一个控制轮依次经过：观测同步 → 决策 → 安装确认 → 数据交付。</text>
+<rect x="30" y="96" width="220" height="46" rx="6" fill="#eaf1f8" stroke="#bdccdc"/>
+<text x="140" y="126" font-size="21" fill="#24374b" text-anchor="middle" font-weight="600">Proxy</text>
+<path d="M140 142 V905" stroke="#a9b8c8" stroke-dasharray="6 6"/>
+<rect x="425" y="96" width="220" height="46" rx="6" fill="#eaf1f8" stroke="#bdccdc"/>
+<text x="535" y="126" font-size="21" fill="#24374b" text-anchor="middle" font-weight="600">所有 ready Engines</text>
+<path d="M535 142 V905" stroke="#a9b8c8" stroke-dasharray="6 6"/>
+<rect x="755" y="96" width="220" height="46" rx="6" fill="#eaf1f8" stroke="#bdccdc"/>
+<text x="865" y="126" font-size="21" fill="#24374b" text-anchor="middle" font-weight="600">RequestManager</text>
+<path d="M865 142 V905" stroke="#a9b8c8" stroke-dasharray="6 6"/>
+<rect x="30" y="162" width="940" height="36" rx="6" fill="#edf2f7" stroke="none"/>
+<text x="45" y="187" font-size="19" fill="#24374b" text-anchor="start" font-weight="600">握手 ①  收齐状态，并完成结果同步</text>
+<path d="M140 237 H535" fill="none" stroke="#2563a6" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="337.5" y="227" font-size="19" fill="#2563a6" text-anchor="middle" stroke="white" stroke-width="5" paint-order="stroke">拉取 state / load</text>
+<path d="M535 289 H140" fill="none" stroke="#167568" stroke-width="2" marker-end="url(#reply)" stroke-dasharray="7 5"/>
+<text x="337.5" y="279" font-size="19" fill="#167568" text-anchor="middle" stroke="white" stroke-width="5" paint-order="stroke">返回各 Engine 状态</text>
+<path d="M140 341 H535" fill="none" stroke="#2563a6" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="337.5" y="331" font-size="19" fill="#2563a6" text-anchor="middle" stroke="white" stroke-width="5" paint-order="stroke">触发 request 结果同步</text>
+<path d="M535 393 H865" fill="none" stroke="#2563a6" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="700.0" y="383" font-size="19" fill="#2563a6" text-anchor="middle" stroke="white" stroke-width="5" paint-order="stroke">提交 request 更新</text>
+<path d="M865 445 H535" fill="none" stroke="#167568" stroke-width="2" marker-end="url(#reply)" stroke-dasharray="7 5"/>
+<text x="700.0" y="435" font-size="19" fill="#167568" text-anchor="middle" stroke="white" stroke-width="5" paint-order="stroke">确认更新</text>
+<path d="M535 497 H140" fill="none" stroke="#167568" stroke-width="2" marker-end="url(#reply)" stroke-dasharray="7 5"/>
+<text x="337.5" y="487" font-size="19" fill="#167568" text-anchor="middle" stroke="white" stroke-width="5" paint-order="stroke">各 Engine 同步完成</text>
+<rect x="35" y="520" width="370" height="74" rx="6" fill="#f0f4f8" stroke="#d5dfe9"/>
+<text x="220.0" y="548" font-size="19" fill="#24374b" text-anchor="middle" font-weight="400">全部观测与同步结束</text>
+<text x="220.0" y="576" font-size="19" fill="#24374b" text-anchor="middle" font-weight="400">固定 ControlSnapshot → 计算 plan</text>
+<rect x="30" y="617" width="940" height="36" rx="6" fill="#edf2f7" stroke="none"/>
+<text x="45" y="642" font-size="19" fill="#24374b" text-anchor="start" font-weight="600">握手 ②  下发 grant，收齐并校验安装 ACK</text>
+<path d="M140 691 H535" fill="none" stroke="#2563a6" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="337.5" y="681" font-size="19" fill="#2563a6" text-anchor="middle" stroke="white" stroke-width="5" paint-order="stroke">下发各 Engine 的 grant</text>
+<path d="M535 749 H140" fill="none" stroke="#167568" stroke-width="2" marker-end="url(#reply)" stroke-dasharray="7 5"/>
+<text x="337.5" y="739" font-size="19" fill="#167568" text-anchor="middle" stroke="white" stroke-width="5" paint-order="stroke">各 Engine 返回安装 ACK</text>
+<rect x="35" y="769" width="370" height="46" rx="6" fill="#f0f4f8" stroke="#d5dfe9"/>
+<text x="220.0" y="797" font-size="19" fill="#24374b" text-anchor="middle" font-weight="400">全部安装 ACK 通过</text>
+<path d="M140 869 H535" fill="none" stroke="#2563a6" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="337.5" y="859" font-size="19" fill="#2563a6" text-anchor="middle" stroke="white" stroke-width="5" paint-order="stroke">交付新 request 数据</text>
+<text x="30" y="940" font-size="17" fill="#65788c" text-anchor="start" font-weight="400">两处等待边界均覆盖本轮所有参与 Engine；较慢的回复会推迟后续控制阶段。</text>
+</g></svg>

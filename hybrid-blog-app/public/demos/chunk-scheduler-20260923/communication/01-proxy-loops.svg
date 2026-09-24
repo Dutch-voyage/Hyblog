@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="840" viewBox="0 0 1000 840" role="img" aria-labelledby="title desc">
+<title id="title">01  原始模式：Proxy 的两个独立 loop</title><desc id="desc">时间向下；上下两条流程各自循环，消息可以交错。</desc>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9" fill="#2563a6"/></marker><marker id="reply" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9" fill="#167568"/></marker></defs>
+<rect width="1000" height="840" rx="14" fill="#fff"/>
+<g font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif">
+<text x="30" y="40" font-size="26" fill="#24374b" text-anchor="start" font-weight="700">01  原始模式：Proxy 的两个独立 loop</text>
+<text x="30" y="74" font-size="18" fill="#65788c" text-anchor="start" font-weight="400">时间向下；上下两条流程各自循环，消息可以交错。</text>
+<rect x="30" y="96" width="220" height="46" rx="6" fill="#eaf1f8" stroke="#bdccdc"/>
+<text x="140" y="126" font-size="21" fill="#24374b" text-anchor="middle" font-weight="600">Proxy</text>
+<path d="M140 142 V785" stroke="#a9b8c8" stroke-dasharray="6 6"/>
+<rect x="425" y="96" width="220" height="46" rx="6" fill="#eaf1f8" stroke="#bdccdc"/>
+<text x="535" y="126" font-size="21" fill="#24374b" text-anchor="middle" font-weight="600">所有 ready Engines</text>
+<path d="M535 142 V785" stroke="#a9b8c8" stroke-dasharray="6 6"/>
+<rect x="755" y="96" width="220" height="46" rx="6" fill="#eaf1f8" stroke="#bdccdc"/>
+<text x="865" y="126" font-size="21" fill="#24374b" text-anchor="middle" font-weight="600">RequestManager</text>
+<path d="M865 142 V785" stroke="#a9b8c8" stroke-dasharray="6 6"/>
+<rect x="30" y="162" width="940" height="36" rx="6" fill="#edf2f7" stroke="none"/>
+<text x="45" y="187" font-size="19" fill="#24374b" text-anchor="start" font-weight="600">并行分支 ①  dispatch loop</text>
+<path d="M140 237 H535" fill="none" stroke="#2563a6" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="337.5" y="227" font-size="19" fill="#2563a6" text-anchor="middle" stroke="white" stroke-width="5" paint-order="stroke">主动查询全局 load</text>
+<path d="M535 289 H140" fill="none" stroke="#167568" stroke-width="2" marker-end="url(#reply)" stroke-dasharray="7 5"/>
+<text x="337.5" y="279" font-size="19" fill="#167568" text-anchor="middle" stroke="white" stroke-width="5" paint-order="stroke">各 Engine 返回负载</text>
+<rect x="35" y="308" width="270" height="46" rx="6" fill="#f0f4f8" stroke="#d5dfe9"/>
+<text x="170.0" y="336" font-size="19" fill="#24374b" text-anchor="middle" font-weight="400">选择 request 归属</text>
+<path d="M140 403 H535" fill="none" stroke="#2563a6" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="337.5" y="393" font-size="19" fill="#2563a6" text-anchor="middle" stroke="white" stroke-width="5" paint-order="stroke">dispatch：交付 request 数据</text>
+<rect x="30" y="444" width="940" height="36" rx="6" fill="#edf2f7" stroke="none"/>
+<text x="45" y="469" font-size="19" fill="#24374b" text-anchor="start" font-weight="600">并行分支 ②  update loop</text>
+<path d="M140 519 H535" fill="none" stroke="#2563a6" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="337.5" y="509" font-size="19" fill="#2563a6" text-anchor="middle" stroke="white" stroke-width="5" paint-order="stroke">触发进度 / 完成结果同步</text>
+<path d="M535 577 H865" fill="none" stroke="#2563a6" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="700.0" y="567" font-size="19" fill="#2563a6" text-anchor="middle" stroke="white" stroke-width="5" paint-order="stroke">提交 request 更新</text>
+<path d="M865 631 H535" fill="none" stroke="#167568" stroke-width="2" marker-end="url(#reply)" stroke-dasharray="7 5"/>
+<text x="700.0" y="621" font-size="19" fill="#167568" text-anchor="middle" stroke="white" stroke-width="5" paint-order="stroke">确认更新</text>
+<path d="M535 689 H140" fill="none" stroke="#167568" stroke-width="2" marker-end="url(#reply)" stroke-dasharray="7 5"/>
+<text x="337.5" y="679" font-size="19" fill="#167568" text-anchor="middle" stroke="white" stroke-width="5" paint-order="stroke">返回同步结果</text>
+<rect x="215" y="718" width="570" height="46" rx="6" fill="#f0f4f8" stroke="#d5dfe9"/>
+<text x="500.0" y="746" font-size="19" fill="#24374b" text-anchor="middle" font-weight="400">每个 loop 等待自己的 RPC，再进入下一轮</text>
+<text x="30" y="820" font-size="17" fill="#65788c" text-anchor="start" font-weight="400">实线：发起调用 / 交付数据    虚线：返回 / 确认    Engine 的本地 scheduler 持续执行</text>
+</g></svg>
