@@ -18,7 +18,7 @@ python3 -m http.server 4387 --bind 127.0.0.1
 
 Then open `http://127.0.0.1:4387/work/chunk-scheduler-update/rollout-scheduler-5-review.html`.
 
-This is an independent self-contained HTML export, not an Astro public article URL. Astro public content deliberately excludes drafts; `/drafts/posts/rollout-scheduler-5/` is an authenticated dynamic route. The exporter leaves status, authentication, routes, RSS and search unchanged. Images are embedded as data URLs and self-contained mechanism HTML as iframe srcdoc. Re-run after article/assets edits.
+This is an independent self-contained HTML export, not an Astro public article URL. Astro public content deliberately excludes drafts; `/drafts/posts/rollout-scheduler-5/` is an authenticated dynamic route. The exporter leaves status, authentication, routes, RSS and search unchanged. Images are embedded as data URLs and report HTML as iframe srcdoc. The exporter keeps fragment navigation inside each report so tabs work offline. Re-run after article/assets edits.
 
 ## Source boundaries
 
