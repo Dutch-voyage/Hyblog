@@ -107,56 +107,44 @@ Proxy 维护一个短重排窗口。空队列收到第一条请求时启动计�
 
 **C 记录有效副本的位置。** G 是仅 GPU 有副本，H 是仅 Host 有副本，GH 是两层各有副本。两份副本的有效前缀可以长短不同，后续计算可以继续延长 GPU 上的前缀。实际容量按每层的物理 blocks 记账。
 
-##### 状态转换：quota 影响哪些操作
+##### 状态转换与 quota
 
-下表将状态转换与 quota 的作用放在一起。小写 e、c 表示该维度保持不变；每个箭头表示操作成功后的状态。
+小写 e、c 表示该维度不变。下表按操作完成后的状态记账。
 
-<span style="display:inline-block;padding:2px 8px;border-radius:5px;color:#1856a0;background:#e8f1ff;font-weight:600">蓝色：执行准入</span>　<span style="display:inline-block;padding:2px 8px;border-radius:5px;color:#713e9e;background:#f3eafa;font-weight:600">紫色：缓存预算策略</span>　<span style="display:inline-block;padding:2px 8px;border-radius:5px;color:#475569;background:#edf1f5;font-weight:600">灰色：事件与既有策略</span>
+<span style="display:inline-block;padding:2px 8px;border-radius:5px;color:#1856a0;background:#e8f1ff;font-weight:600">蓝色：执行准入</span>　<span style="display:inline-block;padding:2px 8px;border-radius:5px;color:#713e9e;background:#f3eafa;font-weight:600">紫色：缓存预算</span>　<span style="display:inline-block;padding:2px 8px;border-radius:5px;color:#475569;background:#edf1f5;font-weight:600">灰色：事件与写入策略</span>
 
-**当前 Phase2 按 bucket 控制每次 call 的 grant，cache 沿用 LRU；Phase3 再将 bucket 预算接入 Promote / Reclaim。**
+目前 bucket quota 控制 call 准入，缓存按 LRU 管理；下表的缓存预算描述按 bucket 扩展后的选择策略。
 
 <div class="scheduler-table">
 
-| 操作 | 状态转移 | 条件 | Quota 如何影响 |
+| 操作 | 状态转移 | 条件 | Quota 的作用 |
 |---|---|---|---|
-| 输入就绪 | (W,c) → (R,c) | 下一次 LLM 输入已准备好。 | <span style="display:inline-block;padding:2px 8px;border-radius:5px;color:#475569;background:#edf1f5;font-weight:600">事件记账</span> tool 返回后增加 ready 候选；execution 缺额不会让 tool 提前完成。 |
-| 开始执行 | (R,G/GH) → (X,G/GH) | 获得 slot；所需 GPU KV 和内存就绪。 | <span style="display:inline-block;padding:2px 8px;border-radius:5px;color:#1856a0;background:#e8f1ff;font-weight:600">Execution quota</span> 缺额时可新增 grant；满额或超额时暂缓新授权，候选留在 R。 |
-| 计算缺失 KV | (R,∅) → (X,G) | 获得 slot 和内存，从输入计算；部分命中只计算缺失部分。 | <span style="display:inline-block;padding:2px 8px;border-radius:5px;color:#1856a0;background:#e8f1ff;font-weight:600">Execution quota</span> 冷请求同样需要 grant；计算产生的 GPU blocks 另行记账。 |
-| 执行结束 | (X,c) → (W,c) 或 (R,c) | 计算结束并释放 slot；trajectory 结束则退出活跃集合，cache 单独回收。 | <span style="display:inline-block;padding:2px 8px;border-radius:5px;color:#475569;background:#edf1f5;font-weight:600">事件记账</span> 确认结束后释放 grant。超额时停止补充，随 call 完成收敛；tool 等待不占 grant。 |
-| 写 Host 副本 | (e,G) → (e,GH) | 目标层有容量，源范围可安全复制；GH 中增量更新不改变类别。 | <span style="display:inline-block;padding:2px 8px;border-radius:5px;color:#475569;background:#edf1f5;font-weight:600">既有写入策略</span> 复用 request release 时的写入策略，计入 Host 占用；Host 有余量不代表必须写满。 |
-| 恢复到 GPU | (e,H) → (e,GH) | 目标层有容量，保留有效 Host 副本；GH 可补齐缺失范围。 | <span style="display:inline-block;padding:2px 8px;border-radius:5px;color:#713e9e;background:#f3eafa;font-weight:600">GPU quota · Phase3</span> 按 bucket 需求与 GPU 预算选择 Promote；恢复完成只改变 C，进入 X 仍需 grant。 |
-| 回收 GPU | (e,GH) → (e,H)；(e,G) → (e,∅) | 目标 blocks 未受保护；唯一副本只可在允许重算时删除。 | <span style="display:inline-block;padding:2px 8px;border-radius:5px;color:#713e9e;background:#f3eafa;font-weight:600">GPU quota · Phase3</span> 优先从超预算 bucket 回收；需要保留唯一前缀时先写 Host，再释放 GPU。 |
-| 回收 Host | (e,GH) → (e,G)；(e,H) → (e,∅) | 目标 blocks 未受保护；唯一副本只可在允许重算时删除。 | <span style="display:inline-block;padding:2px 8px;border-radius:5px;color:#713e9e;background:#f3eafa;font-weight:600">Host quota · Phase3</span> 优先淘汰超预算 bucket 的可回收副本；执行缺额本身不触发 Host 淘汰。 |
+| 输入就绪 | (W,c) → (R,c) | 下一次 LLM 输入准备好。 | <span style="display:inline-block;padding:2px 8px;border-radius:5px;color:#475569;background:#edf1f5;font-weight:600">事件</span> 增加 ready 候选。 |
+| 开始执行 | (R,G/GH) → (X,G/GH) | 获得 grant，GPU KV 和内存就绪。 | <span style="display:inline-block;padding:2px 8px;border-radius:5px;color:#1856a0;background:#e8f1ff;font-weight:600">Execution</span> 缺额时补 grant；满额或超额时暂缓。 |
+| 计算缺失 KV | (R,∅) → (X,G) | 获得 grant 和内存，计算缺失前缀。 | <span style="display:inline-block;padding:2px 8px;border-radius:5px;color:#1856a0;background:#e8f1ff;font-weight:600">Execution</span> 同样占用执行名额，新增 KV 计入 GPU 占用。 |
+| 执行结束 | (X,c) → (W,c) 或 (R,c) | call 结束；trajectory 完成则退出活跃集合。 | <span style="display:inline-block;padding:2px 8px;border-radius:5px;color:#475569;background:#edf1f5;font-weight:600">事件</span> 释放 grant，cache 可继续保留。 |
+| 写 Host 副本 | (e,G) → (e,GH) | Host 有容量，前缀可安全复制。 | <span style="display:inline-block;padding:2px 8px;border-radius:5px;color:#475569;background:#edf1f5;font-weight:600">写入策略</span> 沿用 call 结束时的写入，增加 Host 占用。 |
+| 恢复到 GPU | (e,H) → (e,GH) | GPU 有容量，Host 副本有效。 | <span style="display:inline-block;padding:2px 8px;border-radius:5px;color:#713e9e;background:#f3eafa;font-weight:600">GPU</span> 有余量时，按候选需求选择恢复。 |
+| 回收 GPU | (e,GH) → (e,H)；(e,G) → (e,∅) | blocks 可释放；删除唯一副本须允许重算。 | <span style="display:inline-block;padding:2px 8px;border-radius:5px;color:#713e9e;background:#f3eafa;font-weight:600">GPU</span> 优先回收超预算 bucket 的副本。 |
+| 回收 Host | (e,GH) → (e,G)；(e,H) → (e,∅) | blocks 可释放；删除唯一副本须允许重算。 | <span style="display:inline-block;padding:2px 8px;border-radius:5px;color:#713e9e;background:#f3eafa;font-weight:600">Host</span> 优先淘汰超预算 bucket 的副本。 |
 
 </div>
 
-**缺额按“目标 − 执行中 − 已预留”计算。** 例如目标为 4，已有 2 个 call 执行、1 个获得 grant 但尚未开始，只能再新增 1 个 grant。发放 grant 时 E 可以仍是 R，真正开始执行才进入 X；分发只确定 request 的 Engine 归属，进入候选池后仍需经过准入。
+**执行缺额 = 目标 − 执行中 − 已预留。** 缺额时补 grant，超额时暂停补充，等待 call 完成释放名额。获得 grant 后仍可能停在 R，实际开始执行才进入 X。分发决定 Engine 归属，准入决定何时执行。
 
-**执行名额和缓存容量分别收敛。** 同一 bucket 可以执行缺额、GPU cache 却超额，例如大量候选处于 (W,G) 等待 tool。此时可按缓存策略回收未受保护的前缀，同时从 R 候选中补 grant。进入下一 bucket 只改变归属与记账，不要求搬运 KV。
+**执行缺额与缓存超额可以同时存在。** 例如大量候选处于 (W,G) 等 tool：它们占用 GPU cache，却不占执行名额。此时可以回收部分前缀，同时从 R 候选中补 grant。
 
-Offload 分成两步：**写 Host 副本 G→GH，再释放 GPU 得到 H**；已有有效 Host 副本时可直接 GH→H。默认 request 结束时的 write-through 尝试写 Host，并不自动释放 GPU。复制期间先预留目标层 blocks，成功后才更新有效副本状态；部分回收可能只减少 blocks，C 的类别保持不变。
+Offload 是 **G→GH→H**：先写 Host，再释放 GPU。复制完成后才更新 C；部分回收可能只减少 blocks，仍保持原来的状态类别。
 
 #### Run / Promote / Reclaim
 
-<div class="scheduler-table">
-
-| 操作 | 选择什么 | 使用哪项预算 |
-|---|---|---|
-| Run | 为输入、GPU 缓存及执行资源已就绪的 request 准入执行，E 从 R 变为 X | execution slots，包含执行中与已预留的名额 |
-| Promote | 把值得提前恢复的 Host 前缀准备到 GPU，更新 C | GPU KV blocks |
-| Reclaim | 回收可以释放的副本，按需要先写入另一层，再更新 C | GPU / Host KV blocks |
-
-</div>
-
-这三类操作对应 **Engine × 进度 bucket** 的三本资源账：Execution quota 控制准入，Phase3 的 GPU/Host quota 指导驻留。正在执行、被引用或正在传输的 KV 保持保护，预算调低时先回收其他候选，待保护解除后再逐步收敛。
+Run 使用执行名额，Promote 使用 GPU 空间，Reclaim 释放 GPU 或 Host 空间，分别按 **Engine × 进度 bucket** 记账。执行名额是准入上限，缓存预算是驻留目标；执行中或传输中的 blocks 受保护，超额后逐步回收。
 
 ```text
-watermark → 回收压力有多大，需要让出多少空间
-quota     → 优先从哪个 bucket 让出驻留
-LRU       → 在可回收的候选里选择具体 session
+watermark → 需要回收多少空间
+quota     → 优先从哪个 bucket 回收
+LRU       → 选择具体 session
 ```
-
-Phase3 的回收策略复用现有的水位和 LRU 流程：优先从超预算 bucket 挑选对象；物理空间仍然紧张时，继续从其他 bucket 的可回收对象中选择。预算以 blocks 计量，选择则以 request/session 为单位，具体的有效前缀复制交给 cache backend。
 
 #### Buffer 配比来自供需波动
 
