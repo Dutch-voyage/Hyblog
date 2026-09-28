@@ -19,7 +19,7 @@ formats:
 2. batching，决定decode/prefill的执行（continuous batching/chunked prefill）
 3. parallelism，对于engine内感知的步骤，如PP/CP（TP一般没有执行顺序的变化）
 
-服务入口还需要做**准入**：决定同时放入多少 request；DP router 做**路由**：决定每个 request 交给哪个 DP。下面以内部 DP 部署为例，画出请求下发和负载反馈两条链路。实线表示请求，虚线表示负载；Gateway 是可选的准入层。
+服务入口还需要做**准入**：决定同时放入多少 request；DP router 做**路由**：决定每个 request 交给哪个 DP。下面以内部 DP 的负载感知路由为例，画出请求下发和负载反馈两条链路。实线表示请求，虚线表示负载；Gateway 是可选的准入层。
 
 **vLLM：前端选 DP，Coordinator 汇总负载。** API 前端完成 tokenize 和目标选择，通过 ZMQ 将请求直接发给 EngineCore。各 EngineCore 向 Coordinator 上报负载，Coordinator 汇总后发布给前端，供后续路由使用。[请求分发实现](https://github.com/vllm-project/vllm/blob/main/vllm/v1/engine/core_client.py)、[负载反馈实现](https://github.com/vllm-project/vllm/blob/main/vllm/v1/engine/coordinator.py)。
 
