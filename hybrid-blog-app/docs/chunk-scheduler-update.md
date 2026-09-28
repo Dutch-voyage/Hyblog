@@ -36,15 +36,17 @@ All source paths below are relative to `/Users/bytedance/workspace/chunk_schedul
 
 The old `dss-phase1/CONTRACT.md` was inspected only as historical design. Its stronger completion definition is not used as current acceptance. The desired offload success path must not be confused with the current allocator's separate discard/recompute fallback after failed demotion. The article does not claim end-to-end safety validation of that implementation.
 
-The dual-state section uses static explanatory figures: two state dimensions followed by one sequential trajectory. There is no interactive simulation in the current article.
+The dual-state section uses a two-dimension figure followed by a colored state-transition table explaining quota effects.
 
 ## Shared asset integration
 
 Active article assets in `public/demos/chunk-scheduler-20260923/` (observed assets were copied byte-identically from task A; the communication and dual-state figures are maintained here):
 
-- `dual-state/01-two-dimensions.svg` and `02-one-trajectory.svg`: static dual-state figures; regenerate with `python3 scripts/render-scheduler-dual-state.py`. The earlier `mechanism/index.html` remains an unused historical export.
+- `dual-state/01-two-dimensions.svg`: active state-dimension figure; the former trajectory walkthrough is replaced by the state-transition table.
 - `communication/01-proxy-loops.svg`, `02-two-handshakes.svg`, `03-engine-window.svg`: static sequence diagrams authored in the blog; regenerate with `python3 scripts/render-scheduler-sequences.py`. These replace the communication iframe in the article. The older `mechanism/communication.html` is retained as an unused historical export.
-- `observations/cache-timeline.html`: self-contained HTML packaged from the current cache timeline renderer. Includes all 1,240 frames across 51 windows (31,101 seconds), relative time, stable task/cache/Engine aliases, tier/group filters, zoom and sample detail. Earlier observation SVGs remain unused historical exports.
+- `observations/phase1-vs-phase3.html`: byte-identical comparison export, common batches 4–21; cache in blocks, turn count/share controls, fixed 60-second fluctuation statistics.
+- `observations/history-plan-runtime.html`: byte-identical offline export with #history / #plan / #runtime tabs. History is RM sampling, not a complete Mido trace.
+- Both replace the old cache-timeline.html asset and article entry. Provenance and SHA-256 are in `docs/scheduler-trace-assets.json`. Historical integration notes below describe superseded exports.
 
 Exact imported hashes are in `../work/chunk-scheduler-update/integration-manifest.json`. Source manifest lives in the interview workspace under `work/chunk-scheduler-update/assets/manifest.json`; the source task's `assets-handoff.md` records author sources and validation. No raw cache identities, logs or large original report copied.
 

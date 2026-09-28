@@ -1,0 +1,15 @@
+{
+  "source_task": "01a0b3ca-3a16-7492-9458-4d8889318625",
+  "assets": {
+    "phase1-vs-phase3.html": {
+      "source": "/Users/bytedance/workspace/chunk_schedule/dss-phase2/review/export-assets/phase1-vs-phase3.html",
+      "sha256": "11c0a70bd431d9fefb7b6302013b94a638ed2780e9a7c1389a54c7dbbaf00ad5",
+      "bytes": 875223
+    },
+    "history-plan-runtime.html": {
+      "source": "/Users/bytedance/workspace/chunk_schedule/dss-phase2/review/export-assets/history-plan-runtime.html",
+      "sha256": "d68563b6dd0a90b61f05ecbbf173aeeac031f88c194b2333a77de5d1bd945781",
+      "bytes": 2962078
+    }
+  }
+}

@@ -210,17 +210,24 @@ Profile 需要连起来记录三类信息：候选何时进入或离开ready池�
 
 #### 看一段实际的资源变化
 
-把这些维度放到实际观测中，可以沿时间轴查看 GPU 与 Host 上的缓存如何变化。下面展示 9 月 23 日 02:20–10:58（北京时间）的完整观测，共 1,240 帧、51 个窗口，跨度约 8 小时 38 分钟。横轴是从首帧开始的相对时间，纵轴是缓存 blocks。
+##### 执行与缓存分布对比
 
-先在 **Tier** 中切换 GPU 和 Host，观察两层驻留的变化；再按 **Request-index bucket** 分组，看缓存落在哪些进度区间。这里按 task 最近一次请求的 request_index 归类，已经关联的缓存进入对应 bucket，其余映射状态单独显示。这段历史覆盖 step_1 到 step_22；切换到 **Weight version**，可以沿时间查看不同权重版本的驻留与更替。
+下面对照 FIFO 与 Quota 调度的两次历史运行，取共同覆盖的 batch 4–21，共 18 步。默认按 batch 边界对齐，也可以切换为相同的经过分钟尺度。GPU / Host cache 按 blocks 展示，两组共用纵轴；执行与完成 turn 可切换数量或占比。
 
 <figure class="sviz-demo sviz-demo-rollout">
-<iframe title="GPU 与 Host 缓存交互时间轴" src="/demos/chunk-scheduler-20260923/observations/cache-timeline.html" loading="lazy" style="width:100%;height:1120px;border:1px solid #8b99aa66;border-radius:12px"></iframe>
-<figcaption>默认展示完整历史。拖选时间范围可放大；点击曲线或切换帧，可在下方查看对应窗口的 task、cache、request index 与两层 blocks。</figcaption>
+<iframe title="FIFO 与 Quota 调度：执行和缓存分布对比" src="/demos/chunk-scheduler-20260923/observations/phase1-vs-phase3.html" loading="lazy" style="width:100%;height:1120px;border:1px solid #8b99aa66;border-radius:12px"></iframe>
+<figcaption>历史对照：FIFO 为 9 月 23 日 03:50–10:35，Quota 运行为 9 月 28 日 04:52–09:35（北京时间）。两次运行配置和 workload 不同；缺失采样留白。波动指标使用固定 60 秒窗口，切换图表对齐方式不改变统计。</figcaption>
 </figure>
 
-虚线给出所选 Engine 的 KV 池容量上限，图上方同时列出所选版本缓存占比与池总占用比例。橙色标记对应副本上报不完整的采样，悬停时可以查看已上报的部分。
+[单独打开分布对比](/demos/chunk-scheduler-20260923/observations/phase1-vs-phase3.html)。完成 turn 图横轴为 batch、纵轴为 bucket，便于对照执行分布与最终进入训练的样本组成。
 
-默认显示每个 Engine 当时观测到的当前权重版本。关闭“仅当前版本”可查看全部版本，选择一个 Engine 则能把聚合占用拆开。对照某一帧的 GPU / Host 明细，还可以看到同一个缓存是否同时在两层保留副本。
+##### 历史轨迹 → Quota 计划 → 在线观测
 
-由此，进度分桶和缓存驻留连在了一起：bucket 描述候选走到了哪里，GPU / Host 记录前缀放在哪里；再结合前面 ready 池的补充与取用，就能分析应该提前准备多少候选，以及分别为两层 cache 留出多少空间。
+先从历史采样了解请求与缓存开销，再查看 Quota 计划，最后对照运行中的 cache、执行 turn 和完成 turn。三个页签保留在同一个离线页面中，可直接切换。
+
+<figure class="sviz-demo sviz-demo-rollout">
+<iframe title="历史轨迹、Quota 计划与在线观测" src="/demos/chunk-scheduler-20260923/observations/history-plan-runtime.html" loading="lazy" style="width:100%;height:1120px;border:1px solid #8b99aa66;border-radius:12px"></iframe>
+<figcaption>历史轨迹来自 RM 采样，覆盖范围、缺失情况和来源随图展示；在线完成 turn 图同样按 batch × bucket 排列。</figcaption>
+</figure>
+
+单独打开：[历史轨迹](/demos/chunk-scheduler-20260923/observations/history-plan-runtime.html#history) · [Quota 计划](/demos/chunk-scheduler-20260923/observations/history-plan-runtime.html#plan) · [在线观测](/demos/chunk-scheduler-20260923/observations/history-plan-runtime.html#runtime)。
